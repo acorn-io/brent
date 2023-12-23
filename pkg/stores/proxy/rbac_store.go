@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/attributes"
 	"github.com/acorn-io/brent/pkg/stores/partition"
 	types2 "github.com/acorn-io/brent/pkg/types"
-	"github.com/rancher/wrangler/pkg/kv"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -69,7 +69,11 @@ func (p *rbacPartitioner) All(apiOp *types2.APIRequest, schema *types2.APISchema
 		fallthrough
 	case "watch":
 		if id != "" {
-			ns, name := kv.RSplit(id, "/")
+			ns, name, ok := strings.Cut(id, "/")
+			if !ok {
+				name = ns
+				ns = ""
+			}
 			return []partition.Partition{
 				Partition{
 					Namespace:   ns,

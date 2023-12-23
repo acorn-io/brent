@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/acorn-io/brent/pkg/debug"
@@ -38,5 +40,7 @@ func run(_ *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return s.ListenAndServe(ctx, config.HTTPSListenPort, config.HTTPListenPort, nil)
+	addr := fmt.Sprintf(":%d", config.HTTPListenPort)
+	logrus.Info("Listening on " + addr)
+	return http.ListenAndServe(addr, s)
 }

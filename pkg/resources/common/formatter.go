@@ -10,7 +10,6 @@ import (
 	"github.com/acorn-io/brent/pkg/stores/proxy"
 	"github.com/acorn-io/brent/pkg/types"
 	"github.com/acorn-io/schemer/data"
-	"github.com/rancher/wrangler/pkg/summary"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -79,8 +78,6 @@ func formatter(request *types.APIRequest, resource *types.RawResource) {
 	}
 
 	if unstr, ok := resource.APIObject.Object.(*unstructured.Unstructured); ok {
-		summary.NormalizeConditions(unstr)
-
 		includeFields(request, unstr)
 		excludeManagedFields(request, unstr)
 		excludeFields(request, unstr)

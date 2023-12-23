@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	v1 "github.com/rancher/wrangler/pkg/generated/controllers/rbac/v1"
+	"github.com/acorn-io/baaah/pkg/router"
 	"k8s.io/apimachinery/pkg/util/cache"
 	"k8s.io/apiserver/pkg/authentication/user"
 )
@@ -27,16 +27,24 @@ type roleKey struct {
 	name      string
 }
 
-func NewAccessStore(ctx context.Context, cacheResults bool, rbac v1.Interface) *AccessStore {
-	revisions := newRoleRevision(ctx, rbac)
+func NewAccessStore(ctx context.Context, cacheResults bool, router *router.Router) (*AccessStore, error) {
+	revisions := newRoleRevision(router)
+	users, err := newPolicyRuleIndex(ctx, true, revisions, router)
+	if err != nil {
+		return nil, err
+	}
+	groups, err := newPolicyRuleIndex(ctx, false, revisions, router)
+	if err != nil {
+		return nil, err
+	}
 	as := &AccessStore{
-		users:  newPolicyRuleIndex(true, revisions, rbac),
-		groups: newPolicyRuleIndex(false, revisions, rbac),
+		users:  users,
+		groups: groups,
 	}
 	if cacheResults {
 		as.cache = cache.NewLRUExpireCache(50)
 	}
-	return as
+	return as, nil
 }
 
 func (l *AccessStore) AccessFor(user user.Info) *AccessSet {

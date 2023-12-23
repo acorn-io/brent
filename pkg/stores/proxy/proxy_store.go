@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,8 +17,6 @@ import (
 	types2 "github.com/acorn-io/brent/pkg/types"
 	"github.com/acorn-io/schemer/data"
 	"github.com/acorn-io/schemer/validation"
-	"github.com/pkg/errors"
-	"github.com/rancher/wrangler/pkg/summary"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -56,10 +53,6 @@ type ClientGetter interface {
 	TableAdminClient(ctx *types2.APIRequest, schema *types2.APISchema, namespace string) (dynamic.ResourceInterface, error)
 	TableClientForWatch(ctx *types2.APIRequest, schema *types2.APISchema, namespace string) (dynamic.ResourceInterface, error)
 	TableAdminClientForWatch(ctx *types2.APIRequest, schema *types2.APISchema, namespace string) (dynamic.ResourceInterface, error)
-}
-
-type RelationshipNotifier interface {
-	OnInboundRelationshipChange(ctx context.Context, schema *types2.APISchema, namespace string) <-chan *summary.Relationship
 }
 
 type Store struct {
@@ -307,7 +300,7 @@ func (s *Store) listAndWatch(apiOp *types2.APIRequest, k8sClient dynamic.Resourc
 		LabelSelector:   w.Selector,
 	})
 	if err != nil {
-		returnErr(errors.Wrapf(err, "stopping watch for %s: %v", schema.ID, err), result)
+		returnErr(fmt.Errorf("stopping watch for %s: %w", schema.ID, err), result)
 		return
 	}
 	defer watcher.Stop()

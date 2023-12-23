@@ -1,13 +1,16 @@
 package accesscontrol
 
 import (
+	"context"
 	"fmt"
 	"hash"
 	"sort"
 
-	v1 "github.com/rancher/wrangler/pkg/generated/controllers/rbac/v1"
+	"github.com/acorn-io/baaah/pkg/router"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	kclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -16,39 +19,40 @@ const (
 )
 
 type policyRuleIndex struct {
-	crCache             v1.ClusterRoleCache
-	rCache              v1.RoleCache
-	crbCache            v1.ClusterRoleBindingCache
-	rbCache             v1.RoleBindingCache
+	ctx                 context.Context
+	client              kclient.Reader
 	revisions           *roleRevisionIndex
 	kind                string
 	roleIndexKey        string
 	clusterRoleIndexKey string
 }
 
-func newPolicyRuleIndex(user bool, revisions *roleRevisionIndex, rbac v1.Interface) *policyRuleIndex {
+func newPolicyRuleIndex(ctx context.Context, user bool, revisions *roleRevisionIndex, router *router.Router) (*policyRuleIndex, error) {
 	key := "Group"
 	if user {
 		key = "User"
 	}
 	pi := &policyRuleIndex{
+		ctx:                 ctx,
 		kind:                key,
-		crCache:             rbac.ClusterRole().Cache(),
-		rCache:              rbac.Role().Cache(),
-		crbCache:            rbac.ClusterRoleBinding().Cache(),
-		rbCache:             rbac.RoleBinding().Cache(),
+		client:              router.Backend(),
 		clusterRoleIndexKey: "crb" + key,
 		roleIndexKey:        "rb" + key,
 		revisions:           revisions,
 	}
 
-	pi.crbCache.AddIndexer(pi.clusterRoleIndexKey, pi.clusterRoleBindingBySubjectIndexer)
-	pi.rbCache.AddIndexer(pi.roleIndexKey, pi.roleBindingBySubject)
+	if err := router.Backend().IndexField(ctx, &rbacv1.ClusterRoleBinding{}, pi.clusterRoleIndexKey, pi.clusterRoleBindingBySubjectIndexer); err != nil {
+		return nil, err
+	}
+	if err := router.Backend().IndexField(ctx, &rbacv1.RoleBinding{}, pi.clusterRoleIndexKey, pi.roleBindingBySubject); err != nil {
+		return nil, err
+	}
 
-	return pi
+	return pi, nil
 }
 
-func (p *policyRuleIndex) clusterRoleBindingBySubjectIndexer(crb *rbacv1.ClusterRoleBinding) (result []string, err error) {
+func (p *policyRuleIndex) clusterRoleBindingBySubjectIndexer(obj kclient.Object) (result []string) {
+	crb := obj.(*rbacv1.ClusterRoleBinding)
 	for _, subject := range crb.Subjects {
 		if subject.APIGroup == rbacGroup && subject.Kind == p.kind && crb.RoleRef.Kind == "ClusterRole" {
 			result = append(result, subject.Name)
@@ -60,7 +64,8 @@ func (p *policyRuleIndex) clusterRoleBindingBySubjectIndexer(crb *rbacv1.Cluster
 	return
 }
 
-func (p *policyRuleIndex) roleBindingBySubject(rb *rbacv1.RoleBinding) (result []string, err error) {
+func (p *policyRuleIndex) roleBindingBySubject(obj kclient.Object) (result []string) {
+	rb := obj.(*rbacv1.RoleBinding)
 	for _, subject := range rb.Subjects {
 		if subject.APIGroup == rbacGroup && subject.Kind == p.kind {
 			result = append(result, subject.Name)
@@ -144,14 +149,15 @@ func (p *policyRuleIndex) addAccess(accessSet *AccessSet, namespace string, role
 func (p *policyRuleIndex) getRules(namespace string, roleRef rbacv1.RoleRef) []rbacv1.PolicyRule {
 	switch roleRef.Kind {
 	case "ClusterRole":
-		role, err := p.crCache.Get(roleRef.Name)
-		if err != nil {
+		var role rbacv1.ClusterRole
+		if err := p.client.Get(p.ctx, router.Key("", roleRef.Name), &role); err != nil {
+			// ignore error
 			return nil
 		}
 		return role.Rules
 	case "Role":
-		role, err := p.rCache.Get(namespace, roleRef.Name)
-		if err != nil {
+		var role rbacv1.Role
+		if err := p.client.Get(p.ctx, router.Key(namespace, roleRef.Name), &role); err != nil {
 			return nil
 		}
 		return role.Rules
@@ -160,24 +166,34 @@ func (p *policyRuleIndex) getRules(namespace string, roleRef rbacv1.RoleRef) []r
 	return nil
 }
 
-func (p *policyRuleIndex) getClusterRoleBindings(subjectName string) []*rbacv1.ClusterRoleBinding {
-	result, err := p.crbCache.GetByIndex(p.clusterRoleIndexKey, subjectName)
+func (p *policyRuleIndex) getClusterRoleBindings(subjectName string) []rbacv1.ClusterRoleBinding {
+	var list rbacv1.ClusterRoleBindingList
+	err := p.client.List(p.ctx, &list, &kclient.ListOptions{
+		FieldSelector: fields.SelectorFromSet(map[string]string{
+			p.clusterRoleIndexKey: subjectName,
+		}),
+	})
 	if err != nil {
 		return nil
 	}
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Name < result[j].Name
+	sort.Slice(list.Items, func(i, j int) bool {
+		return list.Items[i].Name < list.Items[j].Name
 	})
-	return result
+	return list.Items
 }
 
-func (p *policyRuleIndex) getRoleBindings(subjectName string) []*rbacv1.RoleBinding {
-	result, err := p.rbCache.GetByIndex(p.roleIndexKey, subjectName)
+func (p *policyRuleIndex) getRoleBindings(subjectName string) []rbacv1.RoleBinding {
+	var list rbacv1.RoleBindingList
+	err := p.client.List(p.ctx, &list, &kclient.ListOptions{
+		FieldSelector: fields.SelectorFromSet(map[string]string{
+			p.roleIndexKey: subjectName,
+		}),
+	})
 	if err != nil {
 		return nil
 	}
-	sort.Slice(result, func(i, j int) bool {
-		return string(result[i].UID) < string(result[j].UID)
+	sort.Slice(list.Items, func(i, j int) bool {
+		return string(list.Items[i].UID) < string(list.Items[j].UID)
 	})
-	return result
+	return list.Items
 }

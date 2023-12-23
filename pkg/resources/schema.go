@@ -3,7 +3,6 @@ package resources
 import (
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/client"
-	"github.com/acorn-io/brent/pkg/clustercache"
 	"github.com/acorn-io/brent/pkg/resources/apigroups"
 	"github.com/acorn-io/brent/pkg/resources/common"
 	"github.com/acorn-io/brent/pkg/schema"
@@ -15,7 +14,7 @@ import (
 	"k8s.io/client-go/discovery"
 )
 
-func DefaultSchemas(baseSchema *types2.APISchemas, ccache clustercache.ClusterCache,
+func DefaultSchemas(baseSchema *types2.APISchemas,
 	schemaFactory brentschema.Factory, serverVersion string) error {
 	subscribe.Register(baseSchema, func(apiOp *types2.APIRequest) *types2.APISchemas {
 		user, ok := request.UserFrom(apiOp.Context())

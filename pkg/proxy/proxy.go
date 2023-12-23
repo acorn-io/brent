@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rancher/wrangler/pkg/kubeconfig"
+	"github.com/acorn-io/baaah/pkg/restconfig"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/proxy"
 	"k8s.io/apiserver/pkg/authentication/user"
@@ -16,8 +16,7 @@ import (
 
 // Mostly copied from "kubectl proxy" code
 func HandlerFromConfig(prefix, kubeConfig string) (http.Handler, error) {
-	loader := kubeconfig.GetInteractiveClientConfig(kubeConfig)
-	cfg, err := loader.ClientConfig()
+	cfg, err := restconfig.FromFile(kubeConfig, "")
 	if err != nil {
 		return nil, err
 	}

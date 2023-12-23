@@ -13,11 +13,10 @@ import (
 )
 
 type Config struct {
-	KubeConfig      string
-	Context         string
-	HTTPSListenPort int
-	HTTPListenPort  int
-	UIPath          string
+	KubeConfig     string
+	Context        string
+	HTTPListenPort int
+	UIPath         string
 
 	WebhookConfig authcli.WebhookConfig
 }
@@ -69,11 +68,6 @@ func Flags(config *Config) []cli.Flag {
 		cli.StringFlag{
 			Name:        "ui-path",
 			Destination: &config.UIPath,
-		},
-		cli.IntFlag{
-			Name:        "https-listen-port",
-			Value:       9443,
-			Destination: &config.HTTPSListenPort,
 		},
 		cli.IntFlag{
 			Name:        "http-listen-port",

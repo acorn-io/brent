@@ -1,11 +1,10 @@
 package accesscontrol
 
 import (
-	"context"
 	"strings"
 	"sync"
 
-	rbac "github.com/rancher/wrangler/pkg/generated/controllers/rbac/v1"
+	"github.com/acorn-io/baaah/pkg/router"
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
@@ -13,10 +12,10 @@ type roleRevisionIndex struct {
 	roleRevisions sync.Map
 }
 
-func newRoleRevision(ctx context.Context, rbac rbac.Interface) *roleRevisionIndex {
+func newRoleRevision(router *router.Router) *roleRevisionIndex {
 	r := &roleRevisionIndex{}
-	rbac.Role().OnChange(ctx, "role-revision-indexer", r.onRoleChanged)
-	rbac.ClusterRole().OnChange(ctx, "role-revision-indexer", r.onClusterRoleChanged)
+	router.Type(&rbacv1.Role{}).IncludeRemoved().HandlerFunc(r.onRoleChanged)
+	router.Type(&rbacv1.ClusterRole{}).IncludeRemoved().HandlerFunc(r.onClusterRoleChanged)
 	return r
 }
 
@@ -29,31 +28,31 @@ func (r *roleRevisionIndex) roleRevision(namespace, name string) string {
 	return revision
 }
 
-func (r *roleRevisionIndex) onClusterRoleChanged(key string, cr *rbacv1.ClusterRole) (role *rbacv1.ClusterRole, err error) {
-	if cr == nil {
+func (r *roleRevisionIndex) onClusterRoleChanged(req router.Request, resp router.Response) error {
+	if req.Object == nil {
 		r.roleRevisions.Delete(roleKey{
-			name: key,
+			name: req.Key,
 		})
 	} else {
 		r.roleRevisions.Store(roleKey{
-			name: key,
-		}, cr.ResourceVersion)
+			name: req.Key,
+		}, req.Object.GetResourceVersion())
 	}
-	return cr, nil
+	return nil
 }
 
-func (r *roleRevisionIndex) onRoleChanged(key string, cr *rbacv1.Role) (role *rbacv1.Role, err error) {
-	if cr == nil {
-		namespace, name, _ := strings.Cut(key, "/")
+func (r *roleRevisionIndex) onRoleChanged(req router.Request, resp router.Response) error {
+	if req.Object == nil {
+		namespace, name, _ := strings.Cut(req.Key, "/")
 		r.roleRevisions.Delete(roleKey{
 			name:      name,
 			namespace: namespace,
 		})
 	} else {
 		r.roleRevisions.Store(roleKey{
-			name:      cr.Name,
-			namespace: cr.Namespace,
-		}, cr.ResourceVersion)
+			name:      req.Name,
+			namespace: req.Namespace,
+		}, req.Object.GetResourceVersion())
 	}
-	return cr, nil
+	return nil
 }

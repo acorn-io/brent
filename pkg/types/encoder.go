@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 func JSONEncoder(writer io.Writer, v interface{}) error {
@@ -12,11 +12,7 @@ func JSONEncoder(writer io.Writer, v interface{}) error {
 }
 
 func YAMLEncoder(writer io.Writer, v interface{}) error {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	buf, err := yaml.JSONToYAML(data)
+	buf, err := yaml.Marshal(v)
 	if err != nil {
 		return err
 	}

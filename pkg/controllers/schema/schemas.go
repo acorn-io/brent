@@ -6,20 +6,19 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/acorn-io/baaah/pkg/router"
 	"github.com/acorn-io/brent/pkg/attributes"
 	"github.com/acorn-io/brent/pkg/resources/common"
 	schema2 "github.com/acorn-io/brent/pkg/schema"
 	"github.com/acorn-io/brent/pkg/schema/converter"
 	"github.com/acorn-io/brent/pkg/types"
-	v1 "github.com/rancher/wrangler/pkg/generated/controllers/apiregistration.k8s.io/v1"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	authorizationv1 "k8s.io/api/authorization/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
-	authorizationv1client "k8s.io/client-go/kubernetes/typed/authorization/v1"
 	apiv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	kclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -36,38 +35,34 @@ type SchemasHandler interface {
 type handler struct {
 	sync.Mutex
 
-	ctx     context.Context
-	toSync  int32
-	schemas *schema2.Collection
-	client  discovery.DiscoveryInterface
-	cols    *common.DynamicColumns
-	ssar    authorizationv1client.SelfSubjectAccessReviewInterface
-	handler SchemasHandler
+	ctx                context.Context
+	toSync             int32
+	schemas            *schema2.Collection
+	discoveryInterface discovery.DiscoveryInterface
+	client             kclient.Client
+	cols               *common.DynamicColumns
 }
 
 func Register(ctx context.Context,
 	cols *common.DynamicColumns,
 	discovery discovery.DiscoveryInterface,
-	apiService v1.APIServiceController,
-	ssar authorizationv1client.SelfSubjectAccessReviewInterface,
-	schemasHandler SchemasHandler,
+	router *router.Router,
 	schemas *schema2.Collection) {
 
 	h := &handler{
-		ctx:     ctx,
-		cols:    cols,
-		client:  discovery,
-		schemas: schemas,
-		handler: schemasHandler,
-		ssar:    ssar,
+		ctx:                ctx,
+		cols:               cols,
+		discoveryInterface: discovery,
+		schemas:            schemas,
+		client:             router.Backend(),
 	}
 
-	apiService.OnChange(ctx, "schema", h.OnChangeAPIService)
+	router.HandleFunc(&apiv1.APIService{}, h.OnChangeAPIService)
 }
 
-func (h *handler) OnChangeAPIService(key string, api *apiv1.APIService) (*apiv1.APIService, error) {
+func (h *handler) OnChangeAPIService(req router.Request, resp router.Response) error {
 	h.queueRefresh()
-	return api, nil
+	return nil
 }
 
 func (h *handler) queueRefresh() {
@@ -143,7 +138,7 @@ func (h *handler) refreshAll(ctx context.Context) error {
 		return nil
 	}
 
-	schemas, err := converter.ToSchemas(h.client)
+	schemas, err := converter.ToSchemas(h.discoveryInterface)
 	if err != nil {
 		return err
 	}
@@ -175,9 +170,6 @@ func (h *handler) refreshAll(ctx context.Context) error {
 	}
 
 	h.schemas.Reset(filteredSchemas)
-	if h.handler != nil {
-		return h.handler.OnSchemas(h.schemas)
-	}
 
 	return nil
 }
@@ -206,7 +198,7 @@ func preferredTypeExists(schema *types.APISchema, schemas map[string]*types.APIS
 
 func (h *handler) allowed(ctx context.Context, schema *types.APISchema) (bool, error) {
 	gvr := attributes.GVR(schema)
-	ssar, err := h.ssar.Create(ctx, &authorizationv1.SelfSubjectAccessReview{
+	ssar := &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
 				Verb:     "list",
@@ -215,7 +207,8 @@ func (h *handler) allowed(ctx context.Context, schema *types.APISchema) (bool, e
 				Resource: gvr.Resource,
 			},
 		},
-	}, metav1.CreateOptions{})
+	}
+	err := h.client.Create(ctx, ssar)
 	if err != nil {
 		return false, err
 	}

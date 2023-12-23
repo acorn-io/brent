@@ -3,72 +3,45 @@ package server
 import (
 	"context"
 
-	"github.com/rancher/wrangler/pkg/generated/controllers/apiextensions.k8s.io"
-	apiextensionsv1 "github.com/rancher/wrangler/pkg/generated/controllers/apiextensions.k8s.io/v1"
-	"github.com/rancher/wrangler/pkg/generated/controllers/apiregistration.k8s.io"
-	apiregistrationv1 "github.com/rancher/wrangler/pkg/generated/controllers/apiregistration.k8s.io/v1"
-	"github.com/rancher/wrangler/pkg/generated/controllers/core"
-	corev1 "github.com/rancher/wrangler/pkg/generated/controllers/core/v1"
-	"github.com/rancher/wrangler/pkg/generated/controllers/rbac"
-	rbacv1 "github.com/rancher/wrangler/pkg/generated/controllers/rbac/v1"
-	"github.com/rancher/wrangler/pkg/generic"
-	"github.com/rancher/wrangler/pkg/start"
+	"github.com/acorn-io/baaah"
+	"github.com/acorn-io/baaah/pkg/router"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	apiv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 type Controllers struct {
-	RESTConfig *rest.Config
-	K8s        kubernetes.Interface
-	Core       corev1.Interface
-	RBAC       rbacv1.Interface
-	API        apiregistrationv1.Interface
-	CRD        apiextensionsv1.Interface
-	starters   []start.Starter
+	K8s    kubernetes.Interface
+	Router *router.Router
 }
 
 func (c *Controllers) Start(ctx context.Context) error {
-	return start.All(ctx, 5, c.starters...)
+	return c.Router.Start(ctx)
 }
 
-func NewController(cfg *rest.Config, opts *generic.FactoryOptions) (*Controllers, error) {
-	c := &Controllers{}
-
-	core, err := core.NewFactoryFromConfigWithOptions(cfg, opts)
+func NewController(cfg *rest.Config) (*Controllers, error) {
+	k8s, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
-	c.starters = append(c.starters, core)
 
-	rbac, err := rbac.NewFactoryFromConfigWithOptions(cfg, opts)
-	if err != nil {
+	s := runtime.NewScheme()
+	if err := scheme.AddToScheme(s); err != nil {
 		return nil, err
 	}
-	c.starters = append(c.starters, rbac)
-
-	api, err := apiregistration.NewFactoryFromConfigWithOptions(cfg, opts)
-	if err != nil {
+	if err := apiv1.AddToScheme(s); err != nil {
 		return nil, err
 	}
-	c.starters = append(c.starters, api)
 
-	crd, err := apiextensions.NewFactoryFromConfigWithOptions(cfg, opts)
-	if err != nil {
-		return nil, err
-	}
-	c.starters = append(c.starters, crd)
+	router, err := baaah.NewRouter("brent", &baaah.Options{
+		DefaultRESTConfig: cfg,
+		Scheme:            s,
+	})
 
-	c.K8s, err = kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-	c.Core = core.Core().V1()
-	c.RBAC = rbac.Rbac().V1()
-	c.API = api.Apiregistration().V1()
-	c.CRD = crd.Apiextensions().V1()
-	c.RESTConfig = cfg
-
-	return c, nil
+	return &Controllers{
+		K8s:    k8s,
+		Router: router,
+	}, nil
 }
-
-type StartHook func(context.Context, *Server) error

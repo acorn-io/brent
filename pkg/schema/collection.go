@@ -8,7 +8,7 @@ import (
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/attributes"
 	types2 "github.com/acorn-io/brent/pkg/types"
-	"github.com/rancher/wrangler/pkg/name"
+	"github.com/acorn-io/schemer/name"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/cache"

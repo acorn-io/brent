@@ -8,12 +8,12 @@ import (
 	"github.com/acorn-io/brent/pkg/builtin"
 	schemastore "github.com/acorn-io/brent/pkg/stores/schema"
 	types2 "github.com/acorn-io/brent/pkg/types"
+	"github.com/acorn-io/broadcaster"
 	"k8s.io/apimachinery/pkg/api/equality"
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/schema"
 	"github.com/acorn-io/schemer/validation"
-	"github.com/rancher/wrangler/pkg/broadcast"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/endpoints/request"
@@ -155,17 +155,16 @@ func (s *Store) userChangeNotify(ctx context.Context, user user.Info) chan inter
 }
 
 func schemaChangeNotifier(ctx context.Context, factory schema.Factory) func(ctx context.Context) (chan interface{}, error) {
-	notify := make(chan interface{})
-	bcast := &broadcast.Broadcaster{}
+	bcast := broadcaster.New[any]()
 	factory.OnChange(ctx, func() {
 		select {
-		case notify <- struct{}{}:
+		case bcast.C <- struct{}{}:
 		default:
 		}
 	})
 	return func(ctx context.Context) (chan interface{}, error) {
-		return bcast.Subscribe(ctx, func() (chan interface{}, error) {
-			return notify, nil
-		})
+		sub := bcast.Subscribe()
+		context.AfterFunc(ctx, sub.Close)
+		return sub.C, nil
 	}
 }

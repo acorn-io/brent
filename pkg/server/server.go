@@ -8,7 +8,6 @@ import (
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/auth"
 	"github.com/acorn-io/brent/pkg/client"
-	"github.com/acorn-io/brent/pkg/clustercache"
 	schemacontroller "github.com/acorn-io/brent/pkg/controllers/schema"
 	"github.com/acorn-io/brent/pkg/resources"
 	"github.com/acorn-io/brent/pkg/resources/common"
@@ -17,7 +16,6 @@ import (
 	"github.com/acorn-io/brent/pkg/server/handler"
 	"github.com/acorn-io/brent/pkg/server/router"
 	"github.com/acorn-io/brent/pkg/types"
-	"github.com/rancher/dynamiclistener/server"
 	"k8s.io/client-go/rest"
 )
 
@@ -27,7 +25,6 @@ type Server struct {
 	http.Handler
 
 	ClientFactory   *client.Factory
-	ClusterCache    clustercache.ClusterCache
 	SchemaFactory   schema.Factory
 	RESTConfig      *rest.Config
 	BaseSchemas     *types.APISchemas
@@ -83,7 +80,7 @@ func setDefaults(server *Server) error {
 
 	if server.controllers == nil {
 		var err error
-		server.controllers, err = NewController(server.RESTConfig, nil)
+		server.controllers, err = NewController(server.RESTConfig)
 		server.needControllerStart = true
 		if err != nil {
 			return err
@@ -118,14 +115,15 @@ func setup(ctx context.Context, server *Server) error {
 
 	asl := server.AccessSetLookup
 	if asl == nil {
-		asl = accesscontrol.NewAccessStore(ctx, true, server.controllers.RBAC)
+		asl, err = accesscontrol.NewAccessStore(ctx, true, server.controllers.Router)
+		if err != nil {
+			return err
+		}
 	}
 
-	ccache := clustercache.NewClusterCache(ctx, cf.AdminDynamicClient())
-	server.ClusterCache = ccache
 	sf := schema.NewCollection(ctx, server.BaseSchemas, asl)
 
-	if err = resources.DefaultSchemas(server.BaseSchemas, ccache, sf, server.Version); err != nil {
+	if err = resources.DefaultSchemas(server.BaseSchemas, sf, server.Version); err != nil {
 		return err
 	}
 
@@ -143,9 +141,7 @@ func setup(ctx context.Context, server *Server) error {
 	schemacontroller.Register(ctx,
 		cols,
 		server.controllers.K8s.Discovery(),
-		server.controllers.API.APIService(),
-		server.controllers.K8s.AuthorizationV1().SelfSubjectAccessReviews(),
-		ccache,
+		server.controllers.Router,
 		sf)
 
 	apiServer, handler, err := handler.New(server.RESTConfig, sf, server.authMiddleware, server.next, server.router)
@@ -166,20 +162,4 @@ func (c *Server) start(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-func (c *Server) ListenAndServe(ctx context.Context, httpsPort, httpPort int, opts *server.ListenOpts) error {
-	if opts == nil {
-		opts = &server.ListenOpts{}
-	}
-	if opts.Storage == nil && opts.Secrets == nil {
-		opts.Secrets = c.controllers.Core.Secret()
-	}
-
-	if err := server.ListenAndServe(ctx, httpsPort, httpPort, c, opts); err != nil {
-		return err
-	}
-
-	<-ctx.Done()
-	return ctx.Err()
 }
