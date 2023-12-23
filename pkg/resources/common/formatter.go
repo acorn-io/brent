@@ -5,12 +5,11 @@ import (
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/data"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/acorn-io/brent/pkg/schema"
-	metricsStore "github.com/acorn-io/brent/pkg/stores/metrics"
 	"github.com/acorn-io/brent/pkg/stores/proxy"
 	"github.com/acorn-io/brent/pkg/summarycache"
+	"github.com/acorn-io/brent/pkg/types"
+	"github.com/acorn-io/schemer/data"
 	"github.com/rancher/wrangler/pkg/slice"
 	"github.com/rancher/wrangler/pkg/summary"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -23,7 +22,7 @@ func DefaultTemplate(clientGetter proxy.ClientGetter,
 	summaryCache *summarycache.SummaryCache,
 	asl accesscontrol.AccessSetLookup) schema.Template {
 	return schema.Template{
-		Store:     metricsStore.NewMetricsStore(proxy.NewProxyStore(clientGetter, summaryCache, asl)),
+		Store:     proxy.NewProxyStore(clientGetter, summaryCache, asl),
 		Formatter: formatter(summaryCache),
 	}
 }

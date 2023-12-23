@@ -4,20 +4,19 @@ import (
 	"strings"
 
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/server"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type AccessControl struct {
-	server.SchemaBasedAccess
+	SchemaBasedAccess
 }
 
 func NewAccessControl() *AccessControl {
 	return &AccessControl{}
 }
 
-func (a *AccessControl) CanDo(apiOp *types.APIRequest, resource, verb, namespace, name string) error {
+func (a *AccessControl) CanDo(apiOp *types2.APIRequest, resource, verb, namespace, name string) error {
 	apiSchema := apiOp.Schemas.LookupSchema(resource)
 	if apiSchema != nil && attributes.GVK(apiSchema).Kind != "" {
 		access := GetAccessListMap(apiSchema)
@@ -36,7 +35,7 @@ func (a *AccessControl) CanDo(apiOp *types.APIRequest, resource, verb, namespace
 	return a.SchemaBasedAccess.CanDo(apiOp, resource, verb, namespace, name)
 }
 
-func (a *AccessControl) CanWatch(apiOp *types.APIRequest, schema *types.APISchema) error {
+func (a *AccessControl) CanWatch(apiOp *types2.APIRequest, schema *types2.APISchema) error {
 	if attributes.GVK(schema).Kind != "" {
 		access := GetAccessListMap(schema)
 		if _, ok := access["watch"]; ok {

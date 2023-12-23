@@ -7,8 +7,8 @@ import (
 
 	"github.com/acorn-io/baaah/pkg/merr"
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/acorn-io/brent/pkg/schema"
+	"github.com/acorn-io/brent/pkg/types"
 	"github.com/rancher/wrangler/pkg/summary/client"
 	"github.com/rancher/wrangler/pkg/summary/informer"
 	"github.com/sirupsen/logrus"

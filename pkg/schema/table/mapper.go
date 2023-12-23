@@ -2,10 +2,10 @@ package table
 
 import (
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/data"
-	types2 "github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	types "github.com/acorn-io/brent/pkg/schemas"
-	"github.com/acorn-io/brent/pkg/schemas/mappers"
+	types2 "github.com/acorn-io/brent/pkg/types"
+	types "github.com/acorn-io/schemer"
+	"github.com/acorn-io/schemer/data"
+	"github.com/acorn-io/schemer/mappers"
 )
 
 type Column struct {

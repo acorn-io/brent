@@ -3,7 +3,7 @@ package counts
 import (
 	"time"
 
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/types"
 )
 
 func buffer(c chan types.APIEvent) chan types.APIEvent {

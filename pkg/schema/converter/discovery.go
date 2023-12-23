@@ -5,8 +5,8 @@ import (
 
 	"github.com/acorn-io/baaah/pkg/merr"
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/acorn-io/brent/pkg/schemas"
+	"github.com/acorn-io/brent/pkg/types"
+	"github.com/acorn-io/schemer"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"

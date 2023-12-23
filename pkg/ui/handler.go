@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/middleware"
+	middleware2 "github.com/acorn-io/brent/pkg/middleware"
 	"github.com/sirupsen/logrus"
 )
 
@@ -64,16 +64,16 @@ func NewUIHandler(opts *Options) *Handler {
 		offlineSetting: opts.Offline,
 		pathSetting:    opts.Path,
 		releaseSetting: opts.ReleaseSetting,
-		middleware: middleware.Chain{
-			middleware.Gzip,
-			middleware.FrameOptions,
-			middleware.CacheMiddleware("json", "js", "css"),
+		middleware: middleware2.Chain{
+			middleware2.Gzip,
+			middleware2.FrameOptions,
+			middleware2.CacheMiddleware("json", "js", "css"),
 		}.Handler,
-		indexMiddleware: middleware.Chain{
-			middleware.Gzip,
-			middleware.NoCache,
-			middleware.FrameOptions,
-			middleware.ContentType,
+		indexMiddleware: middleware2.Chain{
+			middleware2.Gzip,
+			middleware2.NoCache,
+			middleware2.FrameOptions,
+			middleware2.ContentType,
 		}.Handler,
 	}
 

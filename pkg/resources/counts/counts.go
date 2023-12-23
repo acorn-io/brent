@@ -8,8 +8,8 @@ import (
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/attributes"
 	"github.com/acorn-io/brent/pkg/clustercache"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/store/empty"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/stores/empty"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"github.com/rancher/wrangler/pkg/summary"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,8 +24,8 @@ var (
 	}
 )
 
-func Register(schemas *types.APISchemas, ccache clustercache.ClusterCache) {
-	schemas.MustImportAndCustomize(Count{}, func(schema *types.APISchema) {
+func Register(schemas *types2.APISchemas, ccache clustercache.ClusterCache) {
+	schemas.MustImportAndCustomize(Count{}, func(schema *types2.APISchema) {
 		schema.CollectionMethods = []string{http.MethodGet}
 		schema.ResourceMethods = []string{http.MethodGet}
 		schema.Attributes["access"] = accesscontrol.AccessListByVerb{
@@ -88,33 +88,33 @@ type Store struct {
 	ccache clustercache.ClusterCache
 }
 
-func toAPIObject(c Count) types.APIObject {
-	return types.APIObject{
+func toAPIObject(c Count) types2.APIObject {
+	return types2.APIObject{
 		Type:   "count",
 		ID:     c.ID,
 		Object: c,
 	}
 }
 
-func (s *Store) ByID(apiOp *types.APIRequest, schema *types.APISchema, id string) (types.APIObject, error) {
+func (s *Store) ByID(apiOp *types2.APIRequest, schema *types2.APISchema, id string) (types2.APIObject, error) {
 	c := s.getCount(apiOp)
 	return toAPIObject(c), nil
 }
 
-func (s *Store) List(apiOp *types.APIRequest, schema *types.APISchema) (types.APIObjectList, error) {
+func (s *Store) List(apiOp *types2.APIRequest, schema *types2.APISchema) (types2.APIObjectList, error) {
 	c := s.getCount(apiOp)
-	return types.APIObjectList{
-		Objects: []types.APIObject{
+	return types2.APIObjectList{
+		Objects: []types2.APIObject{
 			toAPIObject(c),
 		},
 	}, nil
 }
 
-func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, w types.WatchRequest) (chan types.APIEvent, error) {
+func (s *Store) Watch(apiOp *types2.APIRequest, schema *types2.APISchema, w types2.WatchRequest) (chan types2.APIEvent, error) {
 	var (
-		result      = make(chan types.APIEvent, 100)
+		result      = make(chan types2.APIEvent, 100)
 		counts      map[string]ItemCount
-		gvkToSchema = map[schema2.GroupVersionKind]*types.APISchema{}
+		gvkToSchema = map[schema2.GroupVersionKind]*types2.APISchema{}
 		countLock   sync.Mutex
 	)
 
@@ -183,7 +183,7 @@ func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, w types.
 			countsCopy[k] = *v.DeepCopy()
 		}
 
-		result <- types.APIEvent{
+		result <- types2.APIEvent{
 			Name:         "resource.change",
 			ResourceType: "counts",
 			Object: toAPIObject(Count{
@@ -208,7 +208,7 @@ func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, w types.
 	return buffer(result), nil
 }
 
-func (s *Store) schemasToWatch(apiOp *types.APIRequest) (result []*types.APISchema) {
+func (s *Store) schemasToWatch(apiOp *types2.APIRequest) (result []*types2.APISchema) {
 	for _, schema := range apiOp.Schemas.Schemas {
 		if ignore[schema.ID] {
 			continue
@@ -311,7 +311,7 @@ func simpleState(summary summary.Summary) string {
 	return ""
 }
 
-func (s *Store) getCount(apiOp *types.APIRequest) Count {
+func (s *Store) getCount(apiOp *types2.APIRequest) Count {
 	counts := map[string]ItemCount{}
 
 	for _, schema := range s.schemasToWatch(apiOp) {

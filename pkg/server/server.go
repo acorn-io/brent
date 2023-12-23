@@ -10,8 +10,6 @@ import (
 	"github.com/acorn-io/brent/pkg/client"
 	"github.com/acorn-io/brent/pkg/clustercache"
 	schemacontroller "github.com/acorn-io/brent/pkg/controllers/schema"
-	apiserver "github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/server"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/acorn-io/brent/pkg/resources"
 	"github.com/acorn-io/brent/pkg/resources/common"
 	"github.com/acorn-io/brent/pkg/resources/schemas"
@@ -19,6 +17,7 @@ import (
 	"github.com/acorn-io/brent/pkg/server/handler"
 	"github.com/acorn-io/brent/pkg/server/router"
 	"github.com/acorn-io/brent/pkg/summarycache"
+	"github.com/acorn-io/brent/pkg/types"
 	"github.com/rancher/dynamiclistener/server"
 	"k8s.io/client-go/rest"
 )
@@ -34,7 +33,7 @@ type Server struct {
 	RESTConfig      *rest.Config
 	BaseSchemas     *types.APISchemas
 	AccessSetLookup accesscontrol.AccessSetLookup
-	APIServer       *apiserver.Server
+	APIServer       *handler.Server
 	Version         string
 
 	authMiddleware      auth.Middleware
@@ -127,14 +126,14 @@ func setup(ctx context.Context, server *Server) error {
 	server.ClusterCache = ccache
 	sf := schema.NewCollection(ctx, server.BaseSchemas, asl)
 
-	if err = resources.DefaultSchemas(ctx, server.BaseSchemas, ccache, server.ClientFactory, sf, server.Version); err != nil {
+	if err = resources.DefaultSchemas(server.BaseSchemas, ccache, sf, server.Version); err != nil {
 		return err
 	}
 
 	summaryCache := summarycache.New(sf, ccache)
 	summaryCache.Start(ctx)
 
-	for _, template := range resources.DefaultSchemaTemplates(cf, server.BaseSchemas, summaryCache, asl, server.controllers.K8s.Discovery()) {
+	for _, template := range resources.DefaultSchemaTemplates(cf, summaryCache, asl, server.controllers.K8s.Discovery()) {
 		sf.AddTemplate(template)
 	}
 

@@ -7,13 +7,13 @@ import (
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/builtin"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/builtin"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"k8s.io/apiserver/pkg/authentication/user"
 )
 
-func newSchemas() (*types.APISchemas, error) {
-	apiSchemas := types.EmptyAPISchemas()
+func newSchemas() (*types2.APISchemas, error) {
+	apiSchemas := types2.EmptyAPISchemas()
 	if err := apiSchemas.AddSchemas(builtin.Schemas); err != nil {
 		return nil, err
 	}
@@ -21,11 +21,11 @@ func newSchemas() (*types.APISchemas, error) {
 	return apiSchemas, nil
 }
 
-func (c *Collection) Schemas(user user.Info) (*types.APISchemas, error) {
+func (c *Collection) Schemas(user user.Info) (*types2.APISchemas, error) {
 	access := c.as.AccessFor(user)
 	val, ok := c.cache.Get(access.ID)
 	if ok {
-		schemas, _ := val.(*types.APISchemas)
+		schemas, _ := val.(*types2.APISchemas)
 		return schemas, nil
 	}
 
@@ -38,7 +38,7 @@ func (c *Collection) Schemas(user user.Info) (*types.APISchemas, error) {
 	return schemas, nil
 }
 
-func (c *Collection) schemasForSubject(access *accesscontrol.AccessSet) (*types.APISchemas, error) {
+func (c *Collection) schemasForSubject(access *accesscontrol.AccessSet) (*types2.APISchemas, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -99,28 +99,21 @@ func (c *Collection) schemasForSubject(access *accesscontrol.AccessSet) (*types.
 			}
 		}
 
-		allowed := func(method string) string {
-			if attributes.DisallowMethods(s)[method] {
-				return "blocked-" + method
-			}
-			return method
-		}
-
 		s = s.DeepCopy()
 		attributes.SetAccess(s, verbAccess)
 		if verbAccess.AnyVerb("list", "get") {
-			s.ResourceMethods = append(s.ResourceMethods, allowed(http.MethodGet))
-			s.CollectionMethods = append(s.CollectionMethods, allowed(http.MethodGet))
+			s.ResourceMethods = append(s.ResourceMethods, http.MethodGet)
+			s.CollectionMethods = append(s.CollectionMethods, http.MethodGet)
 		}
 		if verbAccess.AnyVerb("delete") {
-			s.ResourceMethods = append(s.ResourceMethods, allowed(http.MethodDelete))
+			s.ResourceMethods = append(s.ResourceMethods, http.MethodDelete)
 		}
 		if verbAccess.AnyVerb("update") {
-			s.ResourceMethods = append(s.ResourceMethods, allowed(http.MethodPut))
-			s.ResourceMethods = append(s.ResourceMethods, allowed(http.MethodPatch))
+			s.ResourceMethods = append(s.ResourceMethods, http.MethodPut)
+			s.ResourceMethods = append(s.ResourceMethods, http.MethodPatch)
 		}
 		if verbAccess.AnyVerb("create") {
-			s.CollectionMethods = append(s.CollectionMethods, allowed(http.MethodPost))
+			s.CollectionMethods = append(s.CollectionMethods, http.MethodPost)
 		}
 
 		if len(s.CollectionMethods) == 0 && len(s.ResourceMethods) == 0 {
@@ -138,7 +131,7 @@ func (c *Collection) schemasForSubject(access *accesscontrol.AccessSet) (*types.
 	return result, nil
 }
 
-func (c *Collection) defaultStore() types.Store {
+func (c *Collection) defaultStore() types2.Store {
 	templates := c.templates[""]
 	if len(templates) > 0 {
 		return templates[0].Store
@@ -146,7 +139,7 @@ func (c *Collection) defaultStore() types.Store {
 	return nil
 }
 
-func (c *Collection) applyTemplates(schema *types.APISchema) {
+func (c *Collection) applyTemplates(schema *types2.APISchema) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -164,7 +157,7 @@ func (c *Collection) applyTemplates(schema *types.APISchema) {
 			if schema.Formatter == nil {
 				schema.Formatter = t.Formatter
 			} else if t.Formatter != nil {
-				schema.Formatter = types.FormatterChain(t.Formatter, schema.Formatter)
+				schema.Formatter = types2.FormatterChain(t.Formatter, schema.Formatter)
 			}
 			if schema.Store == nil {
 				if t.StoreFactory == nil {

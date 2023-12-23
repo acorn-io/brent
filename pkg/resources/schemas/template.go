@@ -5,21 +5,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/builtin"
+	"github.com/acorn-io/brent/pkg/builtin"
+	schemastore "github.com/acorn-io/brent/pkg/stores/schema"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"k8s.io/apimachinery/pkg/api/equality"
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
-	schemastore "github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/store/schema"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/acorn-io/brent/pkg/schema"
-	"github.com/acorn-io/brent/pkg/schemas/validation"
+	"github.com/acorn-io/schemer/validation"
 	"github.com/rancher/wrangler/pkg/broadcast"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/endpoints/request"
 )
 
-func SetupWatcher(ctx context.Context, schemas *types.APISchemas, asl accesscontrol.AccessSetLookup, factory schema.Factory) {
+func SetupWatcher(ctx context.Context, schemas *types2.APISchemas, asl accesscontrol.AccessSetLookup, factory schema.Factory) {
 	// one instance shared with all stores
 	notifier := schemaChangeNotifier(ctx, factory)
 
@@ -35,14 +35,14 @@ func SetupWatcher(ctx context.Context, schemas *types.APISchemas, asl accesscont
 }
 
 type Store struct {
-	types.Store
+	types2.Store
 
 	asl                accesscontrol.AccessSetLookup
 	sf                 schema.Factory
 	schemaChangeNotify func(context.Context) (chan interface{}, error)
 }
 
-func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, w types.WatchRequest) (chan types.APIEvent, error) {
+func (s *Store) Watch(apiOp *types2.APIRequest, schema *types2.APISchema, w types2.WatchRequest) (chan types2.APIEvent, error) {
 	user, ok := request.UserFrom(apiOp.Request.Context())
 	if !ok {
 		return nil, validation.Unauthorized
@@ -50,7 +50,7 @@ func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, w types.
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
-	result := make(chan types.APIEvent)
+	result := make(chan types2.APIEvent)
 
 	go func() {
 		wg.Wait()
@@ -88,7 +88,7 @@ func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, w types.
 	return result, nil
 }
 
-func (s *Store) sendSchemas(result chan types.APIEvent, apiOp *types.APIRequest, user user.Info, oldSchemas *types.APISchemas) *types.APISchemas {
+func (s *Store) sendSchemas(result chan types2.APIEvent, apiOp *types2.APIRequest, user user.Info, oldSchemas *types2.APISchemas) *types2.APISchemas {
 	schemas, err := s.sf.Schemas(user)
 	if err != nil {
 		logrus.Errorf("failed to get schemas for %v: %v", user, err)
@@ -98,11 +98,11 @@ func (s *Store) sendSchemas(result chan types.APIEvent, apiOp *types.APIRequest,
 	inNewSchemas := map[string]bool{}
 	for _, apiObject := range schemastore.FilterSchemas(apiOp, schemas.Schemas).Objects {
 		inNewSchemas[apiObject.ID] = true
-		eventName := types.ChangeAPIEvent
+		eventName := types2.ChangeAPIEvent
 		if oldSchema := oldSchemas.LookupSchema(apiObject.ID); oldSchema == nil {
-			eventName = types.CreateAPIEvent
+			eventName = types2.CreateAPIEvent
 		} else {
-			newSchemaCopy := apiObject.Object.(*types.APISchema).Schema.DeepCopy()
+			newSchemaCopy := apiObject.Object.(*types2.APISchema).Schema.DeepCopy()
 			oldSchemaCopy := oldSchema.Schema.DeepCopy()
 			newSchemaCopy.Mapper = nil
 			oldSchemaCopy.Mapper = nil
@@ -110,7 +110,7 @@ func (s *Store) sendSchemas(result chan types.APIEvent, apiOp *types.APIRequest,
 				continue
 			}
 		}
-		result <- types.APIEvent{
+		result <- types2.APIEvent{
 			Name:         eventName,
 			ResourceType: "schema",
 			Object:       apiObject,
@@ -121,8 +121,8 @@ func (s *Store) sendSchemas(result chan types.APIEvent, apiOp *types.APIRequest,
 		if inNewSchemas[oldSchema.ID] {
 			continue
 		}
-		result <- types.APIEvent{
-			Name:         types.RemoveAPIEvent,
+		result <- types2.APIEvent{
+			Name:         types2.RemoveAPIEvent,
 			ResourceType: "schema",
 			Object:       oldSchema,
 		}

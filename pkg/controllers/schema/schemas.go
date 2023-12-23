@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/acorn-io/brent/pkg/resources/common"
 	schema2 "github.com/acorn-io/brent/pkg/schema"
 	"github.com/acorn-io/brent/pkg/schema/converter"
+	"github.com/acorn-io/brent/pkg/types"
 	apiextcontrollerv1 "github.com/rancher/wrangler/pkg/generated/controllers/apiextensions.k8s.io/v1"
 	v1 "github.com/rancher/wrangler/pkg/generated/controllers/apiregistration.k8s.io/v1"
 	"github.com/sirupsen/logrus"

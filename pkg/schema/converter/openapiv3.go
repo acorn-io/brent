@@ -1,8 +1,8 @@
 package converter
 
 import (
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/acorn-io/brent/pkg/schemas"
+	"github.com/acorn-io/brent/pkg/types"
+	"github.com/acorn-io/schemer"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 

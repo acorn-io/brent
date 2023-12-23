@@ -3,7 +3,7 @@ package router
 import (
 	"net/http"
 
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/urlbuilder"
+	"github.com/acorn-io/brent/pkg/urlbuilder"
 	"github.com/gorilla/mux"
 )
 

@@ -8,8 +8,8 @@ import (
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/acorn-io/brent/pkg/stores/partition"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"github.com/rancher/wrangler/pkg/kv"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -48,7 +48,7 @@ type rbacPartitioner struct {
 	proxyStore *Store
 }
 
-func (p *rbacPartitioner) Lookup(apiOp *types.APIRequest, schema *types.APISchema, verb, id string) (partition.Partition, error) {
+func (p *rbacPartitioner) Lookup(apiOp *types2.APIRequest, schema *types2.APISchema, verb, id string) (partition.Partition, error) {
 	switch verb {
 	case "create":
 		fallthrough
@@ -63,7 +63,7 @@ func (p *rbacPartitioner) Lookup(apiOp *types.APIRequest, schema *types.APISchem
 	}
 }
 
-func (p *rbacPartitioner) All(apiOp *types.APIRequest, schema *types.APISchema, verb, id string) ([]partition.Partition, error) {
+func (p *rbacPartitioner) All(apiOp *types2.APIRequest, schema *types2.APISchema, verb, id string) ([]partition.Partition, error) {
 	switch verb {
 	case "list":
 		fallthrough
@@ -92,7 +92,7 @@ func (p *rbacPartitioner) All(apiOp *types.APIRequest, schema *types.APISchema, 
 	}
 }
 
-func (p *rbacPartitioner) Store(apiOp *types.APIRequest, partition partition.Partition) (types.Store, error) {
+func (p *rbacPartitioner) Store(apiOp *types2.APIRequest, partition partition.Partition) (types2.Store, error) {
 	return &byNameOrNamespaceStore{
 		Store:     p.proxyStore,
 		partition: partition.(Partition),
@@ -104,7 +104,7 @@ type byNameOrNamespaceStore struct {
 	partition Partition
 }
 
-func (b *byNameOrNamespaceStore) List(apiOp *types.APIRequest, schema *types.APISchema) (types.APIObjectList, error) {
+func (b *byNameOrNamespaceStore) List(apiOp *types2.APIRequest, schema *types2.APISchema) (types2.APIObjectList, error) {
 	if b.partition.Passthrough {
 		return b.Store.List(apiOp, schema)
 	}
@@ -116,7 +116,7 @@ func (b *byNameOrNamespaceStore) List(apiOp *types.APIRequest, schema *types.API
 	return b.Store.ByNames(apiOp, schema, b.partition.Names)
 }
 
-func (b *byNameOrNamespaceStore) Watch(apiOp *types.APIRequest, schema *types.APISchema, wr types.WatchRequest) (chan types.APIEvent, error) {
+func (b *byNameOrNamespaceStore) Watch(apiOp *types2.APIRequest, schema *types2.APISchema, wr types2.WatchRequest) (chan types2.APIEvent, error) {
 	if b.partition.Passthrough {
 		return b.Store.Watch(apiOp, schema, wr)
 	}
@@ -128,7 +128,7 @@ func (b *byNameOrNamespaceStore) Watch(apiOp *types.APIRequest, schema *types.AP
 	return b.Store.WatchNames(apiOp, schema, wr, b.partition.Names)
 }
 
-func isPassthrough(apiOp *types.APIRequest, schema *types.APISchema, verb string) ([]partition.Partition, bool) {
+func isPassthrough(apiOp *types2.APIRequest, schema *types2.APISchema, verb string) ([]partition.Partition, bool) {
 	partitions, passthrough := isPassthroughUnconstrained(apiOp, schema, verb)
 	namespaces, ok := getNamespaceConstraint(apiOp.Request)
 	if !ok {
@@ -156,7 +156,7 @@ func isPassthrough(apiOp *types.APIRequest, schema *types.APISchema, verb string
 	return result, false
 }
 
-func isPassthroughUnconstrained(apiOp *types.APIRequest, schema *types.APISchema, verb string) ([]partition.Partition, bool) {
+func isPassthroughUnconstrained(apiOp *types2.APIRequest, schema *types2.APISchema, verb string) ([]partition.Partition, bool) {
 	accessListByVerb, _ := attributes.Access(schema).(accesscontrol.AccessListByVerb)
 	if accessListByVerb.All(verb) {
 		return nil, true

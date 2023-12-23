@@ -5,21 +5,21 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"golang.org/x/sync/errgroup"
 )
 
 type Partitioner interface {
-	Lookup(apiOp *types.APIRequest, schema *types.APISchema, verb, id string) (Partition, error)
-	All(apiOp *types.APIRequest, schema *types.APISchema, verb, id string) ([]Partition, error)
-	Store(apiOp *types.APIRequest, partition Partition) (types.Store, error)
+	Lookup(apiOp *types2.APIRequest, schema *types2.APISchema, verb, id string) (Partition, error)
+	All(apiOp *types2.APIRequest, schema *types2.APISchema, verb, id string) ([]Partition, error)
+	Store(apiOp *types2.APIRequest, partition Partition) (types2.Store, error)
 }
 
 type Store struct {
 	Partitioner Partitioner
 }
 
-func (s *Store) getStore(apiOp *types.APIRequest, schema *types.APISchema, verb, id string) (types.Store, error) {
+func (s *Store) getStore(apiOp *types2.APIRequest, schema *types2.APISchema, verb, id string) (types2.Store, error) {
 	p, err := s.Partitioner.Lookup(apiOp, schema, verb, id)
 	if err != nil {
 		return nil, err
@@ -28,29 +28,29 @@ func (s *Store) getStore(apiOp *types.APIRequest, schema *types.APISchema, verb,
 	return s.Partitioner.Store(apiOp, p)
 }
 
-func (s *Store) Delete(apiOp *types.APIRequest, schema *types.APISchema, id string) (types.APIObject, error) {
+func (s *Store) Delete(apiOp *types2.APIRequest, schema *types2.APISchema, id string) (types2.APIObject, error) {
 	target, err := s.getStore(apiOp, schema, "delete", id)
 	if err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
 	return target.Delete(apiOp, schema, id)
 }
 
-func (s *Store) ByID(apiOp *types.APIRequest, schema *types.APISchema, id string) (types.APIObject, error) {
+func (s *Store) ByID(apiOp *types2.APIRequest, schema *types2.APISchema, id string) (types2.APIObject, error) {
 	target, err := s.getStore(apiOp, schema, "get", id)
 	if err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
 	return target.ByID(apiOp, schema, id)
 }
 
-func (s *Store) listPartition(ctx context.Context, apiOp *types.APIRequest, schema *types.APISchema, partition Partition,
-	cont string, revision string, limit int) (types.APIObjectList, error) {
+func (s *Store) listPartition(ctx context.Context, apiOp *types2.APIRequest, schema *types2.APISchema, partition Partition,
+	cont string, revision string, limit int) (types2.APIObjectList, error) {
 	store, err := s.Partitioner.Store(apiOp, partition)
 	if err != nil {
-		return types.APIObjectList{}, err
+		return types2.APIObjectList{}, err
 	}
 
 	req := apiOp.Clone()
@@ -69,9 +69,9 @@ func (s *Store) listPartition(ctx context.Context, apiOp *types.APIRequest, sche
 	return store.List(req, schema)
 }
 
-func (s *Store) List(apiOp *types.APIRequest, schema *types.APISchema) (types.APIObjectList, error) {
+func (s *Store) List(apiOp *types2.APIRequest, schema *types2.APISchema) (types2.APIObjectList, error) {
 	var (
-		result types.APIObjectList
+		result types2.APIObjectList
 	)
 
 	paritions, err := s.Partitioner.All(apiOp, schema, "list", "")
@@ -80,7 +80,7 @@ func (s *Store) List(apiOp *types.APIRequest, schema *types.APISchema) (types.AP
 	}
 
 	lister := ParallelPartitionLister{
-		Lister: func(ctx context.Context, partition Partition, cont string, revision string, limit int) (types.APIObjectList, error) {
+		Lister: func(ctx context.Context, partition Partition, cont string, revision string, limit int) (types2.APIObjectList, error) {
 			return s.listPartition(ctx, apiOp, schema, partition, cont, revision, limit)
 		},
 		Concurrency: 3,
@@ -104,25 +104,25 @@ func (s *Store) List(apiOp *types.APIRequest, schema *types.APISchema) (types.AP
 	return result, lister.Err()
 }
 
-func (s *Store) Create(apiOp *types.APIRequest, schema *types.APISchema, data types.APIObject) (types.APIObject, error) {
+func (s *Store) Create(apiOp *types2.APIRequest, schema *types2.APISchema, data types2.APIObject) (types2.APIObject, error) {
 	target, err := s.getStore(apiOp, schema, "create", "")
 	if err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
 	return target.Create(apiOp, schema, data)
 }
 
-func (s *Store) Update(apiOp *types.APIRequest, schema *types.APISchema, data types.APIObject, id string) (types.APIObject, error) {
+func (s *Store) Update(apiOp *types2.APIRequest, schema *types2.APISchema, data types2.APIObject, id string) (types2.APIObject, error) {
 	target, err := s.getStore(apiOp, schema, "update", id)
 	if err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
 	return target.Update(apiOp, schema, data, id)
 }
 
-func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, wr types.WatchRequest) (chan types.APIEvent, error) {
+func (s *Store) Watch(apiOp *types2.APIRequest, schema *types2.APISchema, wr types2.WatchRequest) (chan types2.APIEvent, error) {
 	partitions, err := s.Partitioner.All(apiOp, schema, "watch", wr.ID)
 	if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, wr types
 	apiOp = apiOp.Clone().WithContext(ctx)
 
 	eg := errgroup.Group{}
-	response := make(chan types.APIEvent)
+	response := make(chan types2.APIEvent)
 
 	for _, partition := range partitions {
 		store, err := s.Partitioner.Store(apiOp, partition)

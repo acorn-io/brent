@@ -2,9 +2,9 @@ package converter
 
 import (
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/acorn-io/brent/pkg/schema/table"
-	"github.com/acorn-io/brent/pkg/schemas"
+	"github.com/acorn-io/brent/pkg/types"
+	"github.com/acorn-io/schemer"
 	apiextv1 "github.com/rancher/wrangler/pkg/generated/controllers/apiextensions.k8s.io/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

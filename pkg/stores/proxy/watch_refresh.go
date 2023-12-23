@@ -5,16 +5,16 @@ import (
 	"time"
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"k8s.io/apiserver/pkg/endpoints/request"
 )
 
 type WatchRefresh struct {
-	types.Store
+	types2.Store
 	asl accesscontrol.AccessSetLookup
 }
 
-func (w *WatchRefresh) Watch(apiOp *types.APIRequest, schema *types.APISchema, wr types.WatchRequest) (chan types.APIEvent, error) {
+func (w *WatchRefresh) Watch(apiOp *types2.APIRequest, schema *types2.APISchema, wr types2.WatchRequest) (chan types2.APIEvent, error) {
 	user, ok := request.UserFrom(apiOp.Context())
 	if !ok {
 		return w.Store.Watch(apiOp, schema, wr)

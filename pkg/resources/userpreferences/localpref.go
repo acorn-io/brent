@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/store/empty"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/stores/empty"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"github.com/adrg/xdg"
 	"k8s.io/apiserver/pkg/endpoints/request"
 )
@@ -55,7 +55,7 @@ func get() (map[string]string, error) {
 	return data.Data, nil
 }
 
-func getUserName(apiOp *types.APIRequest) string {
+func getUserName(apiOp *types2.APIRequest) string {
 	user, ok := request.UserFrom(apiOp.Context())
 	if !ok {
 		return "local"
@@ -63,13 +63,13 @@ func getUserName(apiOp *types.APIRequest) string {
 	return user.GetName()
 }
 
-func (l *localStore) ByID(apiOp *types.APIRequest, schema *types.APISchema, id string) (types.APIObject, error) {
+func (l *localStore) ByID(apiOp *types2.APIRequest, schema *types2.APISchema, id string) (types2.APIObject, error) {
 	data, err := get()
 	if err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
-	return types.APIObject{
+	return types2.APIObject{
 		Type: "userpreference",
 		ID:   getUserName(apiOp),
 		Object: UserPreference{
@@ -78,28 +78,28 @@ func (l *localStore) ByID(apiOp *types.APIRequest, schema *types.APISchema, id s
 	}, nil
 }
 
-func (l *localStore) List(apiOp *types.APIRequest, schema *types.APISchema) (types.APIObjectList, error) {
+func (l *localStore) List(apiOp *types2.APIRequest, schema *types2.APISchema) (types2.APIObjectList, error) {
 	obj, err := l.ByID(apiOp, schema, "")
 	if err != nil {
-		return types.APIObjectList{}, err
+		return types2.APIObjectList{}, err
 	}
-	return types.APIObjectList{
-		Objects: []types.APIObject{
+	return types2.APIObjectList{
+		Objects: []types2.APIObject{
 			obj,
 		},
 	}, nil
 }
 
-func (l *localStore) Update(apiOp *types.APIRequest, schema *types.APISchema, data types.APIObject, id string) (types.APIObject, error) {
+func (l *localStore) Update(apiOp *types2.APIRequest, schema *types2.APISchema, data types2.APIObject, id string) (types2.APIObject, error) {
 	err := set(data.Data())
 	if err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 	return l.ByID(apiOp, schema, "")
 }
 
-func (l *localStore) Delete(apiOp *types.APIRequest, schema *types.APISchema, id string) (types.APIObject, error) {
-	return l.Update(apiOp, schema, types.APIObject{
+func (l *localStore) Delete(apiOp *types2.APIRequest, schema *types2.APISchema, id string) (types2.APIObject, error) {
+	return l.Update(apiOp, schema, types2.APIObject{
 		Object: map[string]interface{}{},
 	}, "")
 }

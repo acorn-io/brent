@@ -3,8 +3,8 @@ package attributes
 import (
 	"fmt"
 
-	"github.com/acorn-io/brent/pkg/data/convert"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/types"
+	"github.com/acorn-io/schemer/data/convert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -93,12 +93,6 @@ func GVR(s *types.APISchema) schema.GroupVersionResource {
 	}
 }
 
-func SetGVR(s *types.APISchema, gvk schema.GroupVersionResource) {
-	SetGroup(s, gvk.Group)
-	SetVersion(s, gvk.Version)
-	SetResource(s, gvk.Resource)
-}
-
 func Verbs(s *types.APISchema) []string {
 	return convert.ToStringSlice(s.Attributes["verbs"])
 }
@@ -114,36 +108,12 @@ func GR(s *types.APISchema) schema.GroupResource {
 	}
 }
 
-func SetGR(s *types.APISchema, gr schema.GroupResource) {
-	SetGroup(s, gr.Group)
-	SetResource(s, gr.Resource)
-}
-
 func SetAccess(s *types.APISchema, access interface{}) {
 	setVal(s, "access", access)
 }
 
 func Access(s *types.APISchema) interface{} {
 	return s.Attributes["access"]
-}
-
-func AddDisallowMethods(s *types.APISchema, methods ...string) {
-	data, ok := s.Attributes["disallowMethods"].(map[string]bool)
-	if !ok {
-		data = map[string]bool{}
-		s.Attributes["disallowMethods"] = data
-	}
-	for _, method := range methods {
-		data[method] = true
-	}
-}
-
-func DisallowMethods(s *types.APISchema) map[string]bool {
-	data, ok := s.Attributes["disallowMethods"].(map[string]bool)
-	if !ok {
-		return nil
-	}
-	return data
 }
 
 func SetAPIResource(s *types.APISchema, resource v1.APIResource) {

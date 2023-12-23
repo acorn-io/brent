@@ -2,9 +2,9 @@ package converter
 
 import (
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/data/convert"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/acorn-io/brent/pkg/schemas"
+	"github.com/acorn-io/brent/pkg/types"
+	"github.com/acorn-io/schemer"
+	"github.com/acorn-io/schemer/data/convert"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"

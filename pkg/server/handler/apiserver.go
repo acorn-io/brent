@@ -6,19 +6,17 @@ import (
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/auth"
 	k8sproxy "github.com/acorn-io/brent/pkg/proxy"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/server"
-	apiserver "github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/server"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/urlbuilder"
 	"github.com/acorn-io/brent/pkg/schema"
 	"github.com/acorn-io/brent/pkg/server/router"
+	"github.com/acorn-io/brent/pkg/types"
+	"github.com/acorn-io/brent/pkg/urlbuilder"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/client-go/rest"
 )
 
 func New(cfg *rest.Config, sf schema.Factory, authMiddleware auth.Middleware, next http.Handler,
-	routerFunc router.RouterFunc) (*apiserver.Server, http.Handler, error) {
+	routerFunc router.RouterFunc) (*Server, http.Handler, error) {
 	var (
 		proxy http.Handler
 		err   error
@@ -26,7 +24,7 @@ func New(cfg *rest.Config, sf schema.Factory, authMiddleware auth.Middleware, ne
 
 	a := &apiServer{
 		sf:     sf,
-		server: server.DefaultAPIServer(),
+		server: DefaultAPIServer(),
 	}
 	a.server.AccessControl = accesscontrol.NewAccessControl()
 
@@ -55,7 +53,7 @@ func New(cfg *rest.Config, sf schema.Factory, authMiddleware auth.Middleware, ne
 
 type apiServer struct {
 	sf     schema.Factory
-	server *server.Server
+	server *Server
 }
 
 func (a *apiServer) common(rw http.ResponseWriter, req *http.Request) (*types.APIRequest, bool) {

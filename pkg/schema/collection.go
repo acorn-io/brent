@@ -2,24 +2,21 @@ package schema
 
 import (
 	"context"
-	"net/http"
 	"strings"
 	"sync"
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/server"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"github.com/rancher/wrangler/pkg/name"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/cache"
 	"k8s.io/apiserver/pkg/authentication/user"
-	"k8s.io/apiserver/pkg/endpoints/request"
 )
 
 type Factory interface {
-	Schemas(user user.Info) (*types.APISchemas, error)
+	Schemas(user user.Info) (*types2.APISchemas, error)
 	ByGVR(gvr schema.GroupVersionResource) string
 	ByGVK(gvr schema.GroupVersionKind) string
 	OnChange(ctx context.Context, cb func())
@@ -28,8 +25,8 @@ type Factory interface {
 
 type Collection struct {
 	toSync     int32
-	baseSchema *types.APISchemas
-	schemas    map[string]*types.APISchema
+	baseSchema *types2.APISchemas
+	schemas    map[string]*types2.APISchema
 	templates  map[string][]*Template
 	notifiers  map[int]func()
 	notifierID int
@@ -47,39 +44,17 @@ type Template struct {
 	Group        string
 	Kind         string
 	ID           string
-	Customize    func(*types.APISchema)
-	Formatter    types.Formatter
-	Store        types.Store
+	Customize    func(*types2.APISchema)
+	Formatter    types2.Formatter
+	Store        types2.Store
 	Start        func(ctx context.Context) error
-	StoreFactory func(types.Store) types.Store
+	StoreFactory func(types2.Store) types2.Store
 }
 
-func WrapServer(factory Factory, server *server.Server) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		user, ok := request.UserFrom(req.Context())
-		if !ok {
-			return
-		}
-
-		schemas, err := factory.Schemas(user)
-		if err != nil {
-			logrus.Errorf("failed to lookup schemas for user %v: %v", user, err)
-			http.Error(rw, "schemas failed", http.StatusInternalServerError)
-			return
-		}
-
-		server.Handle(&types.APIRequest{
-			Request:  req,
-			Response: rw,
-			Schemas:  schemas,
-		})
-	})
-}
-
-func NewCollection(ctx context.Context, baseSchema *types.APISchemas, access accesscontrol.AccessSetLookup) *Collection {
+func NewCollection(ctx context.Context, baseSchema *types2.APISchemas, access accesscontrol.AccessSetLookup) *Collection {
 	return &Collection{
 		baseSchema: baseSchema,
-		schemas:    map[string]*types.APISchema{},
+		schemas:    map[string]*types2.APISchema{},
 		templates:  map[string][]*Template{},
 		byGVR:      map[schema.GroupVersionResource]string{},
 		byGVK:      map[schema.GroupVersionKind]string{},
@@ -106,7 +81,7 @@ func (c *Collection) OnChange(ctx context.Context, cb func()) {
 	}()
 }
 
-func (c *Collection) Reset(schemas map[string]*types.APISchema) {
+func (c *Collection) Reset(schemas map[string]*types2.APISchema) {
 	byGVK := map[schema.GroupVersionKind]string{}
 	byGVR := map[schema.GroupVersionResource]string{}
 
@@ -151,7 +126,7 @@ func start(ctx context.Context, templates []*Template) error {
 	return nil
 }
 
-func (c *Collection) startStopTemplate(schemas map[string]*types.APISchema) {
+func (c *Collection) startStopTemplate(schemas map[string]*types2.APISchema) {
 	for id := range schemas {
 		if _, ok := c.running[id]; ok {
 			continue
@@ -178,7 +153,7 @@ func (c *Collection) startStopTemplate(schemas map[string]*types.APISchema) {
 	}
 }
 
-func (c *Collection) Schema(id string) *types.APISchema {
+func (c *Collection) Schema(id string) *types2.APISchema {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 

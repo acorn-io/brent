@@ -14,11 +14,10 @@ import (
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/data"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/acorn-io/brent/pkg/schemas/validation"
-	metricsStore "github.com/acorn-io/brent/pkg/stores/metrics"
 	"github.com/acorn-io/brent/pkg/stores/partition"
+	types2 "github.com/acorn-io/brent/pkg/types"
+	"github.com/acorn-io/schemer/data"
+	"github.com/acorn-io/schemer/validation"
 	"github.com/pkg/errors"
 	"github.com/rancher/wrangler/pkg/summary"
 	"github.com/sirupsen/logrus"
@@ -48,19 +47,19 @@ func init() {
 
 type ClientGetter interface {
 	IsImpersonating() bool
-	K8sInterface(ctx *types.APIRequest) (kubernetes.Interface, error)
+	K8sInterface(ctx *types2.APIRequest) (kubernetes.Interface, error)
 	AdminK8sInterface() (kubernetes.Interface, error)
-	Client(ctx *types.APIRequest, schema *types.APISchema, namespace string) (dynamic.ResourceInterface, error)
-	DynamicClient(ctx *types.APIRequest) (dynamic.Interface, error)
-	AdminClient(ctx *types.APIRequest, schema *types.APISchema, namespace string) (dynamic.ResourceInterface, error)
-	TableClient(ctx *types.APIRequest, schema *types.APISchema, namespace string) (dynamic.ResourceInterface, error)
-	TableAdminClient(ctx *types.APIRequest, schema *types.APISchema, namespace string) (dynamic.ResourceInterface, error)
-	TableClientForWatch(ctx *types.APIRequest, schema *types.APISchema, namespace string) (dynamic.ResourceInterface, error)
-	TableAdminClientForWatch(ctx *types.APIRequest, schema *types.APISchema, namespace string) (dynamic.ResourceInterface, error)
+	Client(ctx *types2.APIRequest, schema *types2.APISchema, namespace string) (dynamic.ResourceInterface, error)
+	DynamicClient(ctx *types2.APIRequest) (dynamic.Interface, error)
+	AdminClient(ctx *types2.APIRequest, schema *types2.APISchema, namespace string) (dynamic.ResourceInterface, error)
+	TableClient(ctx *types2.APIRequest, schema *types2.APISchema, namespace string) (dynamic.ResourceInterface, error)
+	TableAdminClient(ctx *types2.APIRequest, schema *types2.APISchema, namespace string) (dynamic.ResourceInterface, error)
+	TableClientForWatch(ctx *types2.APIRequest, schema *types2.APISchema, namespace string) (dynamic.ResourceInterface, error)
+	TableAdminClientForWatch(ctx *types2.APIRequest, schema *types2.APISchema, namespace string) (dynamic.ResourceInterface, error)
 }
 
 type RelationshipNotifier interface {
-	OnInboundRelationshipChange(ctx context.Context, schema *types.APISchema, namespace string) <-chan *summary.Relationship
+	OnInboundRelationshipChange(ctx context.Context, schema *types2.APISchema, namespace string) <-chan *summary.Relationship
 }
 
 type Store struct {
@@ -68,7 +67,7 @@ type Store struct {
 	notifier     RelationshipNotifier
 }
 
-func NewProxyStore(clientGetter ClientGetter, notifier RelationshipNotifier, lookup accesscontrol.AccessSetLookup) types.Store {
+func NewProxyStore(clientGetter ClientGetter, notifier RelationshipNotifier, lookup accesscontrol.AccessSetLookup) types2.Store {
 	return &errorStore{
 		Store: &WatchRefresh{
 			Store: &partition.Store{
@@ -84,25 +83,25 @@ func NewProxyStore(clientGetter ClientGetter, notifier RelationshipNotifier, loo
 	}
 }
 
-func (s *Store) ByID(apiOp *types.APIRequest, schema *types.APISchema, id string) (types.APIObject, error) {
+func (s *Store) ByID(apiOp *types2.APIRequest, schema *types2.APISchema, id string) (types2.APIObject, error) {
 	result, err := s.byID(apiOp, schema, apiOp.Namespace, id)
 	return toAPI(schema, result), err
 }
 
-func decodeParams(apiOp *types.APIRequest, target runtime.Object) error {
+func decodeParams(apiOp *types2.APIRequest, target runtime.Object) error {
 	return paramCodec.DecodeParameters(apiOp.Request.URL.Query(), metav1.SchemeGroupVersion, target)
 }
 
-func toAPI(schema *types.APISchema, obj runtime.Object) types.APIObject {
+func toAPI(schema *types2.APISchema, obj runtime.Object) types2.APIObject {
 	if obj == nil || reflect.ValueOf(obj).IsNil() {
-		return types.APIObject{}
+		return types2.APIObject{}
 	}
 
 	if unstr, ok := obj.(*unstructured.Unstructured); ok {
 		obj = moveToUnderscore(unstr)
 	}
 
-	apiObject := types.APIObject{
+	apiObject := types2.APIObject{
 		Type:   schema.ID,
 		Object: obj,
 	}
@@ -122,8 +121,8 @@ func toAPI(schema *types.APISchema, obj runtime.Object) types.APIObject {
 	return apiObject
 }
 
-func (s *Store) byID(apiOp *types.APIRequest, schema *types.APISchema, namespace, id string) (*unstructured.Unstructured, error) {
-	k8sClient, err := metricsStore.Wrap(s.clientGetter.TableClient(apiOp, schema, namespace))
+func (s *Store) byID(apiOp *types2.APIRequest, schema *types2.APISchema, namespace, id string) (*unstructured.Unstructured, error) {
+	k8sClient, err := s.clientGetter.TableClient(apiOp, schema, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +132,7 @@ func (s *Store) byID(apiOp *types.APIRequest, schema *types.APISchema, namespace
 		return nil, err
 	}
 
-	obj, err := k8sClient.Get(apiOp, id, opts)
+	obj, err := k8sClient.Get(apiOp.Context(), id, opts)
 	rowToObject(obj)
 	return obj, err
 }
@@ -142,7 +141,7 @@ func moveFromUnderscore(obj map[string]interface{}) map[string]interface{} {
 	if obj == nil {
 		return nil
 	}
-	for k := range types.ReservedFields {
+	for k := range types2.ReservedFields {
 		v, ok := obj["_"+k]
 		delete(obj, "_"+k)
 		delete(obj, k)
@@ -158,7 +157,7 @@ func moveToUnderscore(obj *unstructured.Unstructured) *unstructured.Unstructured
 		return nil
 	}
 
-	for k := range types.ReservedFields {
+	for k := range types2.ReservedFields {
 		v, ok := obj.Object[k]
 		if ok {
 			delete(obj.Object, k)
@@ -219,24 +218,24 @@ func tableToObjects(obj map[string]interface{}) []unstructured.Unstructured {
 	return result
 }
 
-func (s *Store) ByNames(apiOp *types.APIRequest, schema *types.APISchema, names sets.String) (types.APIObjectList, error) {
+func (s *Store) ByNames(apiOp *types2.APIRequest, schema *types2.APISchema, names sets.String) (types2.APIObjectList, error) {
 	if apiOp.Namespace == "*" {
 		// This happens when you grant namespaced objects with "get" by name in a clusterrolebinding. We will treat
 		// this as an invalid situation instead of listing all objects in the cluster and filtering by name.
-		return types.APIObjectList{}, nil
+		return types2.APIObjectList{}, nil
 	}
 
 	adminClient, err := s.clientGetter.TableAdminClient(apiOp, schema, apiOp.Namespace)
 	if err != nil {
-		return types.APIObjectList{}, err
+		return types2.APIObjectList{}, err
 	}
 
 	objs, err := s.list(apiOp, schema, adminClient)
 	if err != nil {
-		return types.APIObjectList{}, err
+		return types2.APIObjectList{}, err
 	}
 
-	var filtered []types.APIObject
+	var filtered []types2.APIObject
 	for _, obj := range objs.Objects {
 		if names.Has(obj.Name()) {
 			filtered = append(filtered, obj)
@@ -247,29 +246,28 @@ func (s *Store) ByNames(apiOp *types.APIRequest, schema *types.APISchema, names 
 	return objs, nil
 }
 
-func (s *Store) List(apiOp *types.APIRequest, schema *types.APISchema) (types.APIObjectList, error) {
+func (s *Store) List(apiOp *types2.APIRequest, schema *types2.APISchema) (types2.APIObjectList, error) {
 	client, err := s.clientGetter.TableClient(apiOp, schema, apiOp.Namespace)
 	if err != nil {
-		return types.APIObjectList{}, err
+		return types2.APIObjectList{}, err
 	}
 	return s.list(apiOp, schema, client)
 }
 
-func (s *Store) list(apiOp *types.APIRequest, schema *types.APISchema, client dynamic.ResourceInterface) (types.APIObjectList, error) {
+func (s *Store) list(apiOp *types2.APIRequest, schema *types2.APISchema, k8sClient dynamic.ResourceInterface) (types2.APIObjectList, error) {
 	opts := metav1.ListOptions{}
 	if err := decodeParams(apiOp, &opts); err != nil {
-		return types.APIObjectList{}, nil
+		return types2.APIObjectList{}, nil
 	}
 
-	k8sClient, _ := metricsStore.Wrap(client, nil)
-	resultList, err := k8sClient.List(apiOp, opts)
+	resultList, err := k8sClient.List(apiOp.Context(), opts)
 	if err != nil {
-		return types.APIObjectList{}, err
+		return types2.APIObjectList{}, err
 	}
 
 	tableToList(resultList)
 
-	result := types.APIObjectList{
+	result := types2.APIObjectList{
 		Revision: resultList.GetResourceVersion(),
 		Continue: resultList.GetContinue(),
 	}
@@ -281,14 +279,14 @@ func (s *Store) list(apiOp *types.APIRequest, schema *types.APISchema, client dy
 	return result, nil
 }
 
-func returnErr(err error, c chan types.APIEvent) {
-	c <- types.APIEvent{
+func returnErr(err error, c chan types2.APIEvent) {
+	c <- types2.APIEvent{
 		Name:  "resource.error",
 		Error: err,
 	}
 }
 
-func (s *Store) listAndWatch(apiOp *types.APIRequest, client dynamic.ResourceInterface, schema *types.APISchema, w types.WatchRequest, result chan types.APIEvent) {
+func (s *Store) listAndWatch(apiOp *types2.APIRequest, k8sClient dynamic.ResourceInterface, schema *types2.APISchema, w types2.WatchRequest, result chan types2.APIEvent) {
 	rev := w.Revision
 	if rev == "-1" || rev == "0" {
 		rev = ""
@@ -304,8 +302,7 @@ func (s *Store) listAndWatch(apiOp *types.APIRequest, client dynamic.ResourceInt
 			timeout = int64(userSetTimeout)
 		}
 	}
-	k8sClient, _ := metricsStore.Wrap(client, nil)
-	watcher, err := k8sClient.Watch(apiOp, metav1.ListOptions{
+	watcher, err := k8sClient.Watch(apiOp.Context(), metav1.ListOptions{
 		Watch:           true,
 		TimeoutSeconds:  &timeout,
 		ResourceVersion: rev,
@@ -360,7 +357,7 @@ func (s *Store) listAndWatch(apiOp *types.APIRequest, client dynamic.ResourceInt
 	return
 }
 
-func (s *Store) WatchNames(apiOp *types.APIRequest, schema *types.APISchema, w types.WatchRequest, names sets.String) (chan types.APIEvent, error) {
+func (s *Store) WatchNames(apiOp *types2.APIRequest, schema *types2.APISchema, w types2.WatchRequest, names sets.String) (chan types2.APIEvent, error) {
 	adminClient, err := s.clientGetter.TableAdminClientForWatch(apiOp, schema, apiOp.Namespace)
 	if err != nil {
 		return nil, err
@@ -370,7 +367,7 @@ func (s *Store) WatchNames(apiOp *types.APIRequest, schema *types.APISchema, w t
 		return nil, err
 	}
 
-	result := make(chan types.APIEvent)
+	result := make(chan types2.APIEvent)
 	go func() {
 		defer close(result)
 		for item := range c {
@@ -383,7 +380,7 @@ func (s *Store) WatchNames(apiOp *types.APIRequest, schema *types.APISchema, w t
 	return result, nil
 }
 
-func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, w types.WatchRequest) (chan types.APIEvent, error) {
+func (s *Store) Watch(apiOp *types2.APIRequest, schema *types2.APISchema, w types2.WatchRequest) (chan types2.APIEvent, error) {
 	client, err := s.clientGetter.TableClientForWatch(apiOp, schema, apiOp.Namespace)
 	if err != nil {
 		return nil, err
@@ -391,8 +388,8 @@ func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, w types.
 	return s.watch(apiOp, schema, w, client)
 }
 
-func (s *Store) watch(apiOp *types.APIRequest, schema *types.APISchema, w types.WatchRequest, client dynamic.ResourceInterface) (chan types.APIEvent, error) {
-	result := make(chan types.APIEvent)
+func (s *Store) watch(apiOp *types2.APIRequest, schema *types2.APISchema, w types2.WatchRequest, client dynamic.ResourceInterface) (chan types2.APIEvent, error) {
+	result := make(chan types2.APIEvent)
 	go func() {
 		s.listAndWatch(apiOp, client, schema, w, result)
 		logrus.Debugf("closing watcher for %s", schema.ID)
@@ -401,20 +398,20 @@ func (s *Store) watch(apiOp *types.APIRequest, schema *types.APISchema, w types.
 	return result, nil
 }
 
-func (s *Store) toAPIEvent(apiOp *types.APIRequest, schema *types.APISchema, et watch.EventType, obj runtime.Object) types.APIEvent {
-	name := types.ChangeAPIEvent
+func (s *Store) toAPIEvent(apiOp *types2.APIRequest, schema *types2.APISchema, et watch.EventType, obj runtime.Object) types2.APIEvent {
+	name := types2.ChangeAPIEvent
 	switch et {
 	case watch.Deleted:
-		name = types.RemoveAPIEvent
+		name = types2.RemoveAPIEvent
 	case watch.Added:
-		name = types.CreateAPIEvent
+		name = types2.CreateAPIEvent
 	}
 
 	if unstr, ok := obj.(*unstructured.Unstructured); ok {
 		rowToObject(unstr)
 	}
 
-	event := types.APIEvent{
+	event := types2.APIEvent{
 		Name:   name,
 		Object: toAPI(schema, obj),
 	}
@@ -428,7 +425,7 @@ func (s *Store) toAPIEvent(apiOp *types.APIRequest, schema *types.APISchema, et 
 	return event
 }
 
-func (s *Store) Create(apiOp *types.APIRequest, schema *types.APISchema, params types.APIObject) (types.APIObject, error) {
+func (s *Store) Create(apiOp *types2.APIRequest, schema *types2.APISchema, params types2.APIObject) (types2.APIObject, error) {
 	var (
 		resp *unstructured.Unstructured
 	)
@@ -439,8 +436,8 @@ func (s *Store) Create(apiOp *types.APIRequest, schema *types.APISchema, params 
 		input = data.Object{}
 	}
 
-	name := types.Name(input)
-	ns := types.Namespace(input)
+	name := types2.Name(input)
+	ns := types2.Namespace(input)
 	if name == "" && input.String("metadata", "generateName") == "" {
 		input.SetNested(schema.ID[0:1]+"-", "metadata", "generatedName")
 	}
@@ -452,38 +449,38 @@ func (s *Store) Create(apiOp *types.APIRequest, schema *types.APISchema, params 
 	gvk := attributes.GVK(schema)
 	input["apiVersion"], input["kind"] = gvk.ToAPIVersionAndKind()
 
-	k8sClient, err := metricsStore.Wrap(s.clientGetter.TableClient(apiOp, schema, ns))
+	k8sClient, err := s.clientGetter.TableClient(apiOp, schema, ns)
 	if err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
 	opts := metav1.CreateOptions{}
 	if err := decodeParams(apiOp, &opts); err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
-	resp, err = k8sClient.Create(apiOp, &unstructured.Unstructured{Object: input}, opts)
+	resp, err = k8sClient.Create(apiOp.Context(), &unstructured.Unstructured{Object: input}, opts)
 	rowToObject(resp)
 	apiObject := toAPI(schema, resp)
 	return apiObject, err
 }
 
-func (s *Store) Update(apiOp *types.APIRequest, schema *types.APISchema, params types.APIObject, id string) (types.APIObject, error) {
+func (s *Store) Update(apiOp *types2.APIRequest, schema *types2.APISchema, params types2.APIObject, id string) (types2.APIObject, error) {
 	var (
 		err   error
 		input = params.Data()
 	)
 
-	ns := types.Namespace(input)
-	k8sClient, err := metricsStore.Wrap(s.clientGetter.TableClient(apiOp, schema, ns))
+	ns := types2.Namespace(input)
+	k8sClient, err := s.clientGetter.TableClient(apiOp, schema, ns)
 	if err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
 	if apiOp.Method == http.MethodPatch {
 		bytes, err := ioutil.ReadAll(io.LimitReader(apiOp.Request.Body, 2<<20))
 		if err != nil {
-			return types.APIObject{}, err
+			return types2.APIObject{}, err
 		}
 
 		pType := apitypes.StrategicMergePatchType
@@ -493,24 +490,24 @@ func (s *Store) Update(apiOp *types.APIRequest, schema *types.APISchema, params 
 
 		opts := metav1.PatchOptions{}
 		if err := decodeParams(apiOp, &opts); err != nil {
-			return types.APIObject{}, err
+			return types2.APIObject{}, err
 		}
 
 		if pType == apitypes.StrategicMergePatchType {
 			data := map[string]interface{}{}
 			if err := json.Unmarshal(bytes, &data); err != nil {
-				return types.APIObject{}, err
+				return types2.APIObject{}, err
 			}
 			data = moveFromUnderscore(data)
 			bytes, err = json.Marshal(data)
 			if err != nil {
-				return types.APIObject{}, err
+				return types2.APIObject{}, err
 			}
 		}
 
-		resp, err := k8sClient.Patch(apiOp, id, pType, bytes, opts)
+		resp, err := k8sClient.Patch(apiOp.Context(), id, pType, bytes, opts)
 		if err != nil {
-			return types.APIObject{}, err
+			return types2.APIObject{}, err
 		}
 
 		return toAPI(schema, resp), nil
@@ -518,42 +515,42 @@ func (s *Store) Update(apiOp *types.APIRequest, schema *types.APISchema, params 
 
 	resourceVersion := input.String("metadata", "resourceVersion")
 	if resourceVersion == "" {
-		return types.APIObject{}, fmt.Errorf("metadata.resourceVersion is required for update")
+		return types2.APIObject{}, fmt.Errorf("metadata.resourceVersion is required for update")
 	}
 
 	opts := metav1.UpdateOptions{}
 	if err := decodeParams(apiOp, &opts); err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
-	resp, err := k8sClient.Update(apiOp, &unstructured.Unstructured{Object: moveFromUnderscore(input)}, metav1.UpdateOptions{})
+	resp, err := k8sClient.Update(apiOp.Context(), &unstructured.Unstructured{Object: moveFromUnderscore(input)}, metav1.UpdateOptions{})
 	if err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
 	rowToObject(resp)
 	return toAPI(schema, resp), nil
 }
 
-func (s *Store) Delete(apiOp *types.APIRequest, schema *types.APISchema, id string) (types.APIObject, error) {
+func (s *Store) Delete(apiOp *types2.APIRequest, schema *types2.APISchema, id string) (types2.APIObject, error) {
 	opts := metav1.DeleteOptions{}
 	if err := decodeParams(apiOp, &opts); err != nil {
-		return types.APIObject{}, nil
+		return types2.APIObject{}, nil
 	}
 
-	k8sClient, err := metricsStore.Wrap(s.clientGetter.TableClient(apiOp, schema, apiOp.Namespace))
+	k8sClient, err := s.clientGetter.TableClient(apiOp, schema, apiOp.Namespace)
 	if err != nil {
-		return types.APIObject{}, err
+		return types2.APIObject{}, err
 	}
 
-	if err := k8sClient.Delete(apiOp, id, opts); err != nil {
-		return types.APIObject{}, err
+	if err := k8sClient.Delete(apiOp.Context(), id, opts); err != nil {
+		return types2.APIObject{}, err
 	}
 
 	obj, err := s.byID(apiOp, schema, apiOp.Namespace, id)
 	if err != nil {
 		// ignore lookup error
-		return types.APIObject{}, validation.ErrorCode{
+		return types2.APIObject{}, validation.ErrorCode{
 			Status: http.StatusNoContent,
 		}
 	}

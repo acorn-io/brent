@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/acorn-io/brent/pkg/attributes"
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -98,7 +98,7 @@ func (p *Factory) IsImpersonating() bool {
 	return p.impersonate
 }
 
-func (p *Factory) K8sInterface(ctx *types.APIRequest) (kubernetes.Interface, error) {
+func (p *Factory) K8sInterface(ctx *types2.APIRequest) (kubernetes.Interface, error) {
 	cfg, err := setupConfig(ctx, p.clientCfg, p.impersonate)
 	if err != nil {
 		return nil, err
@@ -111,55 +111,55 @@ func (p *Factory) AdminK8sInterface() (kubernetes.Interface, error) {
 	return kubernetes.NewForConfig(p.clientCfg)
 }
 
-func (p *Factory) DynamicClient(ctx *types.APIRequest) (dynamic.Interface, error) {
+func (p *Factory) DynamicClient(ctx *types2.APIRequest) (dynamic.Interface, error) {
 	return newDynamicClient(ctx, p.clientCfg, p.impersonate)
 }
 
-func (p *Factory) Client(ctx *types.APIRequest, s *types.APISchema, namespace string) (dynamic.ResourceInterface, error) {
+func (p *Factory) Client(ctx *types2.APIRequest, s *types2.APISchema, namespace string) (dynamic.ResourceInterface, error) {
 	return newClient(ctx, p.clientCfg, s, namespace, p.impersonate)
 }
 
-func (p *Factory) AdminClient(ctx *types.APIRequest, s *types.APISchema, namespace string) (dynamic.ResourceInterface, error) {
+func (p *Factory) AdminClient(ctx *types2.APIRequest, s *types2.APISchema, namespace string) (dynamic.ResourceInterface, error) {
 	return newClient(ctx, p.clientCfg, s, namespace, false)
 }
 
-func (p *Factory) ClientForWatch(ctx *types.APIRequest, s *types.APISchema, namespace string) (dynamic.ResourceInterface, error) {
+func (p *Factory) ClientForWatch(ctx *types2.APIRequest, s *types2.APISchema, namespace string) (dynamic.ResourceInterface, error) {
 	return newClient(ctx, p.watchClientCfg, s, namespace, p.impersonate)
 }
 
-func (p *Factory) AdminClientForWatch(ctx *types.APIRequest, s *types.APISchema, namespace string) (dynamic.ResourceInterface, error) {
+func (p *Factory) AdminClientForWatch(ctx *types2.APIRequest, s *types2.APISchema, namespace string) (dynamic.ResourceInterface, error) {
 	return newClient(ctx, p.watchClientCfg, s, namespace, false)
 }
 
-func (p *Factory) TableClient(ctx *types.APIRequest, s *types.APISchema, namespace string) (dynamic.ResourceInterface, error) {
+func (p *Factory) TableClient(ctx *types2.APIRequest, s *types2.APISchema, namespace string) (dynamic.ResourceInterface, error) {
 	if attributes.Table(s) {
 		return newClient(ctx, p.tableClientCfg, s, namespace, p.impersonate)
 	}
 	return p.Client(ctx, s, namespace)
 }
 
-func (p *Factory) TableAdminClient(ctx *types.APIRequest, s *types.APISchema, namespace string) (dynamic.ResourceInterface, error) {
+func (p *Factory) TableAdminClient(ctx *types2.APIRequest, s *types2.APISchema, namespace string) (dynamic.ResourceInterface, error) {
 	if attributes.Table(s) {
 		return newClient(ctx, p.tableClientCfg, s, namespace, false)
 	}
 	return p.AdminClient(ctx, s, namespace)
 }
 
-func (p *Factory) TableClientForWatch(ctx *types.APIRequest, s *types.APISchema, namespace string) (dynamic.ResourceInterface, error) {
+func (p *Factory) TableClientForWatch(ctx *types2.APIRequest, s *types2.APISchema, namespace string) (dynamic.ResourceInterface, error) {
 	if attributes.Table(s) {
 		return newClient(ctx, p.tableWatchClientCfg, s, namespace, p.impersonate)
 	}
 	return p.ClientForWatch(ctx, s, namespace)
 }
 
-func (p *Factory) TableAdminClientForWatch(ctx *types.APIRequest, s *types.APISchema, namespace string) (dynamic.ResourceInterface, error) {
+func (p *Factory) TableAdminClientForWatch(ctx *types2.APIRequest, s *types2.APISchema, namespace string) (dynamic.ResourceInterface, error) {
 	if attributes.Table(s) {
 		return newClient(ctx, p.tableWatchClientCfg, s, namespace, false)
 	}
 	return p.AdminClientForWatch(ctx, s, namespace)
 }
 
-func setupConfig(ctx *types.APIRequest, cfg *rest.Config, impersonate bool) (*rest.Config, error) {
+func setupConfig(ctx *types2.APIRequest, cfg *rest.Config, impersonate bool) (*rest.Config, error) {
 	if impersonate {
 		user, ok := request.UserFrom(ctx.Context())
 		if !ok {
@@ -173,7 +173,7 @@ func setupConfig(ctx *types.APIRequest, cfg *rest.Config, impersonate bool) (*re
 	return cfg, nil
 }
 
-func newDynamicClient(ctx *types.APIRequest, cfg *rest.Config, impersonate bool) (dynamic.Interface, error) {
+func newDynamicClient(ctx *types2.APIRequest, cfg *rest.Config, impersonate bool) (dynamic.Interface, error) {
 	cfg, err := setupConfig(ctx, cfg, impersonate)
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func newDynamicClient(ctx *types.APIRequest, cfg *rest.Config, impersonate bool)
 	return dynamic.NewForConfig(cfg)
 }
 
-func newClient(ctx *types.APIRequest, cfg *rest.Config, s *types.APISchema, namespace string, impersonate bool) (dynamic.ResourceInterface, error) {
+func newClient(ctx *types2.APIRequest, cfg *rest.Config, s *types2.APISchema, namespace string, impersonate bool) (dynamic.ResourceInterface, error) {
 	client, err := newDynamicClient(ctx, cfg, impersonate)
 	if err != nil {
 		return nil, err

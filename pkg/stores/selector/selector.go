@@ -1,20 +1,20 @@
 package selector
 
 import (
-	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	types2 "github.com/acorn-io/brent/pkg/types"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
 type Store struct {
-	types.Store
+	types2.Store
 	Selector labels.Selector
 }
 
-func (s *Store) List(apiOp *types.APIRequest, schema *types.APISchema) (types.APIObjectList, error) {
+func (s *Store) List(apiOp *types2.APIRequest, schema *types2.APISchema) (types2.APIObjectList, error) {
 	return s.Store.List(s.addSelector(apiOp), schema)
 }
 
-func (s *Store) addSelector(apiOp *types.APIRequest) *types.APIRequest {
+func (s *Store) addSelector(apiOp *types2.APIRequest) *types2.APIRequest {
 
 	apiOp = apiOp.Clone()
 	apiOp.Request = apiOp.Request.Clone(apiOp.Context())
@@ -24,6 +24,6 @@ func (s *Store) addSelector(apiOp *types.APIRequest) *types.APIRequest {
 	return apiOp
 }
 
-func (s *Store) Watch(apiOp *types.APIRequest, schema *types.APISchema, w types.WatchRequest) (chan types.APIEvent, error) {
+func (s *Store) Watch(apiOp *types2.APIRequest, schema *types2.APISchema, w types2.WatchRequest) (chan types2.APIEvent, error) {
 	return s.Store.Watch(s.addSelector(apiOp), schema, w)
 }
