@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/acorn-io/baaah/pkg/ratelimit"
 	"github.com/acorn-io/brent/pkg/attributes"
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/rancher/wrangler/pkg/ratelimit"
 	"k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"

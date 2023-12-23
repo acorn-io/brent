@@ -1,10 +1,11 @@
 package accesscontrol
 
 import (
+	"strings"
+
 	"github.com/acorn-io/brent/pkg/attributes"
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/server"
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/rancher/wrangler/pkg/kv"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -24,7 +25,7 @@ func (a *AccessControl) CanDo(apiOp *types.APIRequest, resource, verb, namespace
 			return nil
 		}
 	}
-	group, resource := kv.Split(resource, "/")
+	group, resource, _ := strings.Cut(resource, "/")
 	accessSet := apiOp.Schemas.Attributes["accessSet"].(*AccessSet)
 	if accessSet.Grants(verb, schema.GroupResource{
 		Group:    group,

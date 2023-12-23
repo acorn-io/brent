@@ -2,10 +2,10 @@ package accesscontrol
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	rbac "github.com/rancher/wrangler/pkg/generated/controllers/rbac/v1"
-	"github.com/rancher/wrangler/pkg/kv"
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
@@ -44,7 +44,7 @@ func (r *roleRevisionIndex) onClusterRoleChanged(key string, cr *rbacv1.ClusterR
 
 func (r *roleRevisionIndex) onRoleChanged(key string, cr *rbacv1.Role) (role *rbacv1.Role, err error) {
 	if cr == nil {
-		namespace, name := kv.Split(key, "/")
+		namespace, name, _ := strings.Cut(key, "/")
 		r.roleRevisions.Delete(roleKey{
 			name:      name,
 			namespace: namespace,

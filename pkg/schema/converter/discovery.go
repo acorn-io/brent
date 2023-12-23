@@ -3,10 +3,10 @@ package converter
 import (
 	"strings"
 
+	"github.com/acorn-io/baaah/pkg/merr"
 	"github.com/acorn-io/brent/pkg/attributes"
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/acorn-io/brent/pkg/schemas"
-	"github.com/rancher/wrangler/pkg/merr"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"

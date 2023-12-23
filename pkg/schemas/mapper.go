@@ -1,10 +1,10 @@
 package schemas
 
 import (
+	"github.com/acorn-io/baaah/pkg/merr"
 	"github.com/acorn-io/brent/pkg/data"
 	"github.com/acorn-io/brent/pkg/data/convert"
 	"github.com/acorn-io/brent/pkg/schemas/definition"
-	"github.com/rancher/wrangler/pkg/merr"
 )
 
 type Mapper interface {

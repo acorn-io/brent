@@ -3,12 +3,12 @@ package cli
 import (
 	"context"
 
+	"github.com/acorn-io/baaah/pkg/ratelimit"
+	"github.com/acorn-io/baaah/pkg/restconfig"
 	brentauth "github.com/acorn-io/brent/pkg/auth"
 	authcli "github.com/acorn-io/brent/pkg/auth/cli"
 	"github.com/acorn-io/brent/pkg/server"
 	"github.com/acorn-io/brent/pkg/ui"
-	"github.com/rancher/wrangler/pkg/kubeconfig"
-	"github.com/rancher/wrangler/pkg/ratelimit"
 	"github.com/urfave/cli"
 )
 
@@ -35,7 +35,7 @@ func (c *Config) ToServer(ctx context.Context) (*server.Server, error) {
 		auth brentauth.Middleware
 	)
 
-	restConfig, err := kubeconfig.GetNonInteractiveClientConfigWithContext(c.KubeConfig, c.Context).ClientConfig()
+	restConfig, err := restconfig.FromFile(c.KubeConfig, c.Context)
 	if err != nil {
 		return nil, err
 	}

@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
-	"github.com/acorn-io/brent/pkg/aggregation"
 	"github.com/acorn-io/brent/pkg/auth"
 	"github.com/acorn-io/brent/pkg/client"
 	"github.com/acorn-io/brent/pkg/clustercache"
@@ -36,7 +35,6 @@ type Server struct {
 	BaseSchemas     *types.APISchemas
 	AccessSetLookup accesscontrol.AccessSetLookup
 	APIServer       *apiserver.Server
-	ClusterRegistry string
 	Version         string
 
 	authMiddleware      auth.Middleware
@@ -44,23 +42,17 @@ type Server struct {
 	needControllerStart bool
 	next                http.Handler
 	router              router.RouterFunc
-
-	aggregationSecretNamespace string
-	aggregationSecretName      string
 }
 
 type Options struct {
 	// Controllers If the controllers are passed in the caller must also start the controllers
-	Controllers                *Controllers
-	ClientFactory              *client.Factory
-	AccessSetLookup            accesscontrol.AccessSetLookup
-	AuthMiddleware             auth.Middleware
-	Next                       http.Handler
-	Router                     router.RouterFunc
-	AggregationSecretNamespace string
-	AggregationSecretName      string
-	ClusterRegistry            string
-	ServerVersion              string
+	Controllers     *Controllers
+	ClientFactory   *client.Factory
+	AccessSetLookup accesscontrol.AccessSetLookup
+	AuthMiddleware  auth.Middleware
+	Next            http.Handler
+	Router          router.RouterFunc
+	ServerVersion   string
 }
 
 func New(ctx context.Context, restConfig *rest.Config, opts *Options) (*Server, error) {
@@ -69,17 +61,14 @@ func New(ctx context.Context, restConfig *rest.Config, opts *Options) (*Server, 
 	}
 
 	server := &Server{
-		RESTConfig:                 restConfig,
-		ClientFactory:              opts.ClientFactory,
-		AccessSetLookup:            opts.AccessSetLookup,
-		authMiddleware:             opts.AuthMiddleware,
-		controllers:                opts.Controllers,
-		next:                       opts.Next,
-		router:                     opts.Router,
-		aggregationSecretNamespace: opts.AggregationSecretNamespace,
-		aggregationSecretName:      opts.AggregationSecretName,
-		ClusterRegistry:            opts.ClusterRegistry,
-		Version:                    opts.ServerVersion,
+		RESTConfig:      restConfig,
+		ClientFactory:   opts.ClientFactory,
+		AccessSetLookup: opts.AccessSetLookup,
+		authMiddleware:  opts.AuthMiddleware,
+		controllers:     opts.Controllers,
+		next:            opts.Next,
+		router:          opts.Router,
+		Version:         opts.ServerVersion,
 	}
 
 	if err := setup(ctx, server); err != nil {
@@ -185,11 +174,6 @@ func (c *Server) start(ctx context.Context) error {
 	return nil
 }
 
-func (c *Server) StartAggregation(ctx context.Context) {
-	aggregation.Watch(ctx, c.controllers.Core.Secret(), c.aggregationSecretNamespace,
-		c.aggregationSecretName, c)
-}
-
 func (c *Server) ListenAndServe(ctx context.Context, httpsPort, httpPort int, opts *server.ListenOpts) error {
 	if opts == nil {
 		opts = &server.ListenOpts{}
@@ -197,8 +181,6 @@ func (c *Server) ListenAndServe(ctx context.Context, httpsPort, httpPort int, op
 	if opts.Storage == nil && opts.Secrets == nil {
 		opts.Secrets = c.controllers.Core.Secret()
 	}
-
-	c.StartAggregation(ctx)
 
 	if err := server.ListenAndServe(ctx, httpsPort, httpPort, c, opts); err != nil {
 		return err

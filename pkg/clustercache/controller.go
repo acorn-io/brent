@@ -5,10 +5,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/acorn-io/baaah/pkg/merr"
 	"github.com/acorn-io/brent/pkg/attributes"
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/acorn-io/brent/pkg/schema"
-	"github.com/rancher/wrangler/pkg/merr"
 	"github.com/rancher/wrangler/pkg/summary/client"
 	"github.com/rancher/wrangler/pkg/summary/informer"
 	"github.com/sirupsen/logrus"

@@ -7,7 +7,6 @@ import (
 	"github.com/acorn-io/brent/pkg/data"
 	"github.com/acorn-io/brent/pkg/data/convert"
 	"github.com/acorn-io/brent/pkg/schemas"
-	"github.com/rancher/wrangler/pkg/kv"
 )
 
 type Enum struct {
@@ -27,7 +26,7 @@ func NewEnum(field string, vals ...string) schemas.Mapper {
 	for _, v := range vals {
 		k := v
 		if strings.Contains(v, "=") {
-			v, k = kv.Split(v, "=")
+			v, k, _ = strings.Cut(v, "=")
 		}
 		f.vals[normalize(v)] = k
 	}

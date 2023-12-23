@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"time"
 
 	"github.com/rancher/wrangler/pkg/generated/controllers/apiextensions.k8s.io"
 	apiextensionsv1 "github.com/rancher/wrangler/pkg/generated/controllers/apiextensions.k8s.io/v1"
@@ -13,7 +12,6 @@ import (
 	"github.com/rancher/wrangler/pkg/generated/controllers/rbac"
 	rbacv1 "github.com/rancher/wrangler/pkg/generated/controllers/rbac/v1"
 	"github.com/rancher/wrangler/pkg/generic"
-	"github.com/rancher/wrangler/pkg/ratelimit"
 	"github.com/rancher/wrangler/pkg/start"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -31,14 +29,6 @@ type Controllers struct {
 
 func (c *Controllers) Start(ctx context.Context) error {
 	return start.All(ctx, 5, c.starters...)
-}
-
-func RestConfigDefaults(cfg *rest.Config) *rest.Config {
-	cfg = rest.CopyConfig(cfg)
-	cfg.Timeout = 15 * time.Minute
-	cfg.RateLimiter = ratelimit.None
-
-	return cfg
 }
 
 func NewController(cfg *rest.Config, opts *generic.FactoryOptions) (*Controllers, error) {
