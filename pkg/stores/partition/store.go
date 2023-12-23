@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/rancher/apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"golang.org/x/sync/errgroup"
 )
 

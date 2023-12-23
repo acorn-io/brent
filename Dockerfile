@@ -5,11 +5,11 @@ COPY pkg /src/pkg/
 #RUN --mount=type=cache,target=/root/.cache/go-build \
 RUN \
     cd /src && \
-    CGO_ENABLED=0 go build -ldflags "-extldflags -static -s" -o /steve
+    CGO_ENABLED=0 go build -ldflags "-extldflags -static -s" -o /brent
 
 FROM alpine
 RUN apk -U --no-cache add ca-certificates
-COPY --from=build /steve /usr/bin/steve
+COPY --from=build /brent /usr/bin/brent
 # Hack to make golang do files,dns search order
 ENV LOCALDOMAIN=""
-ENTRYPOINT ["/usr/bin/steve"]
+ENTRYPOINT ["/usr/bin/brent"]

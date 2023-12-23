@@ -1,8 +1,8 @@
 package proxy
 
 import (
-	"github.com/rancher/apiserver/pkg/apierror"
-	"github.com/rancher/apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/apierror"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/rancher/wrangler/pkg/schemas/validation"
 	"k8s.io/apimachinery/pkg/api/errors"
 )

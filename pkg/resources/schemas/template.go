@@ -5,13 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rancher/apiserver/pkg/builtin"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/builtin"
 	"k8s.io/apimachinery/pkg/api/equality"
 
-	schemastore "github.com/rancher/apiserver/pkg/store/schema"
-	"github.com/rancher/apiserver/pkg/types"
-	"github.com/rancher/steve/pkg/accesscontrol"
-	"github.com/rancher/steve/pkg/schema"
+	"github.com/acorn-io/brent/pkg/accesscontrol"
+	schemastore "github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/store/schema"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/schema"
 	"github.com/rancher/wrangler/pkg/broadcast"
 	"github.com/rancher/wrangler/pkg/schemas/validation"
 	"github.com/sirupsen/logrus"

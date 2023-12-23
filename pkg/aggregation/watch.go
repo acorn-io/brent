@@ -53,10 +53,10 @@ func (h *handler) OnSecret(key string, secret *corev1.Secret) (*corev1.Secret, e
 	}
 
 	if h.cancel != nil {
-		logrus.Info("Restarting steve aggregation client")
+		logrus.Info("Restarting brent aggregation client")
 		h.cancel()
 	} else {
-		logrus.Info("Starting steve aggregation client")
+		logrus.Info("Starting brent aggregation client")
 	}
 
 	ctx, cancel := context.WithCancel(h.ctx)

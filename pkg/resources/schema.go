@@ -3,28 +3,28 @@ package resources
 import (
 	"context"
 
-	"github.com/rancher/apiserver/pkg/store/apiroot"
-	"github.com/rancher/apiserver/pkg/subscribe"
-	"github.com/rancher/apiserver/pkg/types"
-	"github.com/rancher/steve/pkg/accesscontrol"
-	"github.com/rancher/steve/pkg/client"
-	"github.com/rancher/steve/pkg/clustercache"
-	"github.com/rancher/steve/pkg/resources/apigroups"
-	"github.com/rancher/steve/pkg/resources/cluster"
-	"github.com/rancher/steve/pkg/resources/common"
-	"github.com/rancher/steve/pkg/resources/counts"
-	"github.com/rancher/steve/pkg/resources/formatters"
-	"github.com/rancher/steve/pkg/resources/userpreferences"
-	"github.com/rancher/steve/pkg/schema"
-	steveschema "github.com/rancher/steve/pkg/schema"
-	"github.com/rancher/steve/pkg/stores/proxy"
-	"github.com/rancher/steve/pkg/summarycache"
+	"github.com/acorn-io/brent/pkg/accesscontrol"
+	"github.com/acorn-io/brent/pkg/client"
+	"github.com/acorn-io/brent/pkg/clustercache"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/store/apiroot"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/subscribe"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/resources/apigroups"
+	"github.com/acorn-io/brent/pkg/resources/cluster"
+	"github.com/acorn-io/brent/pkg/resources/common"
+	"github.com/acorn-io/brent/pkg/resources/counts"
+	"github.com/acorn-io/brent/pkg/resources/formatters"
+	"github.com/acorn-io/brent/pkg/resources/userpreferences"
+	"github.com/acorn-io/brent/pkg/schema"
+	brentschema "github.com/acorn-io/brent/pkg/schema"
+	"github.com/acorn-io/brent/pkg/stores/proxy"
+	"github.com/acorn-io/brent/pkg/summarycache"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/client-go/discovery"
 )
 
 func DefaultSchemas(ctx context.Context, baseSchema *types.APISchemas, ccache clustercache.ClusterCache,
-	cg proxy.ClientGetter, schemaFactory steveschema.Factory, serverVersion string) error {
+	cg proxy.ClientGetter, schemaFactory brentschema.Factory, serverVersion string) error {
 	counts.Register(baseSchema, ccache)
 	subscribe.Register(baseSchema, func(apiOp *types.APIRequest) *types.APISchemas {
 		user, ok := request.UserFrom(apiOp.Context())

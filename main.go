@@ -3,26 +3,26 @@ package main
 import (
 	"os"
 
-	"github.com/rancher/steve/pkg/debug"
-	stevecli "github.com/rancher/steve/pkg/server/cli"
-	"github.com/rancher/steve/pkg/version"
+	"github.com/acorn-io/brent/pkg/debug"
+	brentcli "github.com/acorn-io/brent/pkg/server/cli"
+	"github.com/acorn-io/brent/pkg/version"
 	"github.com/rancher/wrangler/pkg/signals"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
 var (
-	config      stevecli.Config
+	config      brentcli.Config
 	debugconfig debug.Config
 )
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "steve"
+	app.Name = "brent"
 	app.Version = version.FriendlyVersion()
 	app.Usage = ""
 	app.Flags = append(
-		stevecli.Flags(&config),
+		brentcli.Flags(&config),
 		debug.Flags(&debugconfig)...)
 	app.Action = run
 

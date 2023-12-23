@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/acorn-io/brent/pkg/auth"
 	"github.com/gorilla/websocket"
 	"github.com/rancher/remotedialer"
-	"github.com/rancher/steve/pkg/auth"
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,7 +47,7 @@ func ListenAndServe(ctx context.Context, url string, caCert []byte, token string
 	for {
 		err := serve(ctx, dialer, url, headers, handler)
 		if err != nil {
-			logrus.Errorf("Failed to dial steve aggregation server: %v", err)
+			logrus.Errorf("Failed to dial brent aggregation server: %v", err)
 		}
 		select {
 		case <-ctx.Done():
@@ -78,7 +78,7 @@ func serve(ctx context.Context, dialer websocket.Dialer, url string, headers htt
 		conn.Close()
 	}()
 
-	listener := NewListener("steve")
+	listener := NewListener("brent")
 	server := http.Server{
 		Handler: handler,
 		BaseContext: func(_ net.Listener) context.Context {

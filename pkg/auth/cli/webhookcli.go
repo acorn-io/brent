@@ -7,7 +7,7 @@ import (
 	"github.com/rancher/wrangler/pkg/ratelimit"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/rancher/steve/pkg/auth"
+	"github.com/acorn-io/brent/pkg/auth"
 	"github.com/urfave/cli"
 )
 

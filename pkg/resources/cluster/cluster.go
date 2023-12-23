@@ -4,13 +4,13 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/rancher/apiserver/pkg/store/empty"
-	"github.com/rancher/apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/accesscontrol"
+	"github.com/acorn-io/brent/pkg/attributes"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/store/empty"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	brentschema "github.com/acorn-io/brent/pkg/schema"
+	"github.com/acorn-io/brent/pkg/stores/proxy"
 	detector "github.com/rancher/kubernetes-provider-detector"
-	"github.com/rancher/steve/pkg/accesscontrol"
-	"github.com/rancher/steve/pkg/attributes"
-	steveschema "github.com/rancher/steve/pkg/schema"
-	"github.com/rancher/steve/pkg/stores/proxy"
 	"github.com/rancher/wrangler/pkg/genericcondition"
 	"github.com/rancher/wrangler/pkg/schemas"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +19,7 @@ import (
 	"k8s.io/client-go/discovery"
 )
 
-func Register(ctx context.Context, apiSchemas *types.APISchemas, cg proxy.ClientGetter, schemaFactory steveschema.Factory) {
+func Register(ctx context.Context, apiSchemas *types.APISchemas, cg proxy.ClientGetter, schemaFactory brentschema.Factory) {
 	apiSchemas.InternalSchemas.TypeName("management.cattle.io.cluster", Cluster{})
 
 	apiSchemas.MustImportAndCustomize(&ApplyInput{}, nil)

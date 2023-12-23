@@ -3,8 +3,8 @@ package metrics
 import (
 	"time"
 
-	"github.com/rancher/apiserver/pkg/types"
-	"github.com/rancher/steve/pkg/metrics"
+	"github.com/acorn-io/brent/pkg/metrics"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 )
 
 type Store struct {

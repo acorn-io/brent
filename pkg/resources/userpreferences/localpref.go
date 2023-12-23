@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/store/empty"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/adrg/xdg"
-	"github.com/rancher/apiserver/pkg/store/empty"
-	"github.com/rancher/apiserver/pkg/types"
 	"k8s.io/apiserver/pkg/endpoints/request"
 )
 
@@ -21,7 +21,7 @@ type localStore struct {
 }
 
 func confDir() string {
-	return filepath.Join(xdg.ConfigHome, "steve")
+	return filepath.Join(xdg.ConfigHome, "brent")
 }
 
 func confFile() string {

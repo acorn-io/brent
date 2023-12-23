@@ -3,8 +3,8 @@ package router
 import (
 	"net/http"
 
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/urlbuilder"
 	"github.com/gorilla/mux"
-	"github.com/rancher/apiserver/pkg/urlbuilder"
 )
 
 type RouterFunc func(h Handlers) http.Handler

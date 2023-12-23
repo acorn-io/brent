@@ -3,7 +3,7 @@ package counts
 import (
 	"time"
 
-	"github.com/rancher/apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 )
 
 func buffer(c chan types.APIEvent) chan types.APIEvent {
@@ -20,20 +20,20 @@ func debounce(result, input chan types.APIEvent) {
 	defer t.Stop()
 
 	var (
-		lastEvent *types.APIEvent
+		labrentnt *types.APIEvent
 	)
 	for {
 		select {
 		case event, ok := <-input:
 			if ok {
-				lastEvent = &event
+				labrentnt = &event
 			} else {
 				return
 			}
 		case <-t.C:
-			if lastEvent != nil {
-				result <- *lastEvent
-				lastEvent = nil
+			if labrentnt != nil {
+				result <- *labrentnt
+				labrentnt = nil
 			}
 		}
 	}

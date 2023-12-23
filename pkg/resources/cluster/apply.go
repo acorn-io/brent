@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/acorn-io/brent/pkg/attributes"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	brentschema "github.com/acorn-io/brent/pkg/schema"
+	"github.com/acorn-io/brent/pkg/stores/proxy"
 	"github.com/pborman/uuid"
-	"github.com/rancher/apiserver/pkg/types"
-	"github.com/rancher/steve/pkg/attributes"
-	steveschema "github.com/rancher/steve/pkg/schema"
-	"github.com/rancher/steve/pkg/stores/proxy"
 	"github.com/rancher/wrangler/pkg/apply"
 	"github.com/rancher/wrangler/pkg/yaml"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -21,7 +21,7 @@ import (
 
 type Apply struct {
 	cg            proxy.ClientGetter
-	schemaFactory steveschema.Factory
+	schemaFactory brentschema.Factory
 }
 
 func (a *Apply) ServeHTTP(rw http.ResponseWriter, req *http.Request) {

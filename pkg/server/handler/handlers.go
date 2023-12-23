@@ -1,10 +1,10 @@
 package handler
 
 import (
+	"github.com/acorn-io/brent/pkg/attributes"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/schema"
 	"github.com/gorilla/mux"
-	"github.com/rancher/apiserver/pkg/types"
-	"github.com/rancher/steve/pkg/attributes"
-	"github.com/rancher/steve/pkg/schema"
 )
 
 func k8sAPI(sf schema.Factory, apiOp *types.APIRequest) {

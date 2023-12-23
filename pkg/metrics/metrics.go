@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/apierror"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/rancher/apiserver/pkg/apierror"
 )
 
 type MetricLogger struct {

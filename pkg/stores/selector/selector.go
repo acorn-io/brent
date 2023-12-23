@@ -1,7 +1,7 @@
 package selector
 
 import (
-	"github.com/rancher/apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"k8s.io/apimachinery/pkg/labels"
 )
 

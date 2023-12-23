@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/rancher/apiserver/pkg/types"
-	"github.com/rancher/steve/pkg/accesscontrol"
-	"github.com/rancher/steve/pkg/attributes"
-	"github.com/rancher/steve/pkg/stores/partition"
+	"github.com/acorn-io/brent/pkg/accesscontrol"
+	"github.com/acorn-io/brent/pkg/attributes"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/stores/partition"
 	"github.com/rancher/wrangler/pkg/kv"
 	"k8s.io/apimachinery/pkg/util/sets"
 )

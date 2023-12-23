@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rancher/apiserver/pkg/types"
-	"github.com/rancher/steve/pkg/attributes"
+	"github.com/acorn-io/brent/pkg/attributes"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/rancher/wrangler/pkg/ratelimit"
 	"k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

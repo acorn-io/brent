@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/rancher/apiserver/pkg/types"
-	"github.com/rancher/steve/pkg/accesscontrol"
+	"github.com/acorn-io/brent/pkg/accesscontrol"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"k8s.io/apiserver/pkg/endpoints/request"
 )
 

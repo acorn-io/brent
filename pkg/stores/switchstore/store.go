@@ -1,7 +1,7 @@
 package switchstore
 
 import (
-	"github.com/rancher/apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 )
 
 type StorePicker func(apiOp *types.APIRequest, schema *types.APISchema, verb, id string) (types.Store, error)

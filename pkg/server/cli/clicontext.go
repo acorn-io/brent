@@ -3,10 +3,10 @@ package cli
 import (
 	"context"
 
-	steveauth "github.com/rancher/steve/pkg/auth"
-	authcli "github.com/rancher/steve/pkg/auth/cli"
-	"github.com/rancher/steve/pkg/server"
-	"github.com/rancher/steve/pkg/ui"
+	brentauth "github.com/acorn-io/brent/pkg/auth"
+	authcli "github.com/acorn-io/brent/pkg/auth/cli"
+	"github.com/acorn-io/brent/pkg/server"
+	"github.com/acorn-io/brent/pkg/ui"
 	"github.com/rancher/wrangler/pkg/kubeconfig"
 	"github.com/rancher/wrangler/pkg/ratelimit"
 	"github.com/urfave/cli"
@@ -32,7 +32,7 @@ func (c *Config) MustServer(ctx context.Context) *server.Server {
 
 func (c *Config) ToServer(ctx context.Context) (*server.Server, error) {
 	var (
-		auth steveauth.Middleware
+		auth brentauth.Middleware
 	)
 
 	restConfig, err := kubeconfig.GetNonInteractiveClientConfigWithContext(c.KubeConfig, c.Context).ClientConfig()

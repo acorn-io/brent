@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rancher/apiserver/pkg/types"
-	"github.com/rancher/steve/pkg/attributes"
-	"github.com/rancher/steve/pkg/schema"
+	"github.com/acorn-io/brent/pkg/attributes"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/schema"
 	"github.com/rancher/wrangler/pkg/merr"
 	"github.com/rancher/wrangler/pkg/summary/client"
 	"github.com/rancher/wrangler/pkg/summary/informer"

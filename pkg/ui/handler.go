@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/rancher/apiserver/pkg/middleware"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/middleware"
 	"github.com/sirupsen/logrus"
 )
 

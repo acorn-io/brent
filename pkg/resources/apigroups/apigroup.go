@@ -3,10 +3,10 @@ package apigroups
 import (
 	"net/http"
 
-	"github.com/rancher/steve/pkg/schema"
+	"github.com/acorn-io/brent/pkg/schema"
 
-	"github.com/rancher/apiserver/pkg/store/empty"
-	"github.com/rancher/apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/store/empty"
+	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 )
