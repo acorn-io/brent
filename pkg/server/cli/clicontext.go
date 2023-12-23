@@ -8,7 +8,6 @@ import (
 	brentauth "github.com/acorn-io/brent/pkg/auth"
 	authcli "github.com/acorn-io/brent/pkg/auth/cli"
 	"github.com/acorn-io/brent/pkg/server"
-	"github.com/acorn-io/brent/pkg/ui"
 	"github.com/urfave/cli"
 )
 
@@ -49,7 +48,6 @@ func (c *Config) ToServer(ctx context.Context) (*server.Server, error) {
 
 	return server.New(ctx, restConfig, &server.Options{
 		AuthMiddleware: auth,
-		Next:           ui.New(c.UIPath),
 	})
 }
 
