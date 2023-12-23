@@ -11,13 +11,11 @@ import (
 	schema2 "github.com/acorn-io/brent/pkg/schema"
 	"github.com/acorn-io/brent/pkg/schema/converter"
 	"github.com/acorn-io/brent/pkg/types"
-	apiextcontrollerv1 "github.com/rancher/wrangler/pkg/generated/controllers/apiextensions.k8s.io/v1"
 	v1 "github.com/rancher/wrangler/pkg/generated/controllers/apiregistration.k8s.io/v1"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	authorizationv1 "k8s.io/api/authorization/v1"
-	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	authorizationv1client "k8s.io/client-go/kubernetes/typed/authorization/v1"
@@ -43,7 +41,6 @@ type handler struct {
 	schemas *schema2.Collection
 	client  discovery.DiscoveryInterface
 	cols    *common.DynamicColumns
-	crd     apiextcontrollerv1.CustomResourceDefinitionClient
 	ssar    authorizationv1client.SelfSubjectAccessReviewInterface
 	handler SchemasHandler
 }
@@ -51,7 +48,6 @@ type handler struct {
 func Register(ctx context.Context,
 	cols *common.DynamicColumns,
 	discovery discovery.DiscoveryInterface,
-	crd apiextcontrollerv1.CustomResourceDefinitionController,
 	apiService v1.APIServiceController,
 	ssar authorizationv1client.SelfSubjectAccessReviewInterface,
 	schemasHandler SchemasHandler,
@@ -63,17 +59,10 @@ func Register(ctx context.Context,
 		client:  discovery,
 		schemas: schemas,
 		handler: schemasHandler,
-		crd:     crd,
 		ssar:    ssar,
 	}
 
 	apiService.OnChange(ctx, "schema", h.OnChangeAPIService)
-	crd.OnChange(ctx, "schema", h.OnChangeCRD)
-}
-
-func (h *handler) OnChangeCRD(key string, crd *apiextv1.CustomResourceDefinition) (*apiextv1.CustomResourceDefinition, error) {
-	h.queueRefresh()
-	return crd, nil
 }
 
 func (h *handler) OnChangeAPIService(key string, api *apiv1.APIService) (*apiv1.APIService, error) {
@@ -154,7 +143,7 @@ func (h *handler) refreshAll(ctx context.Context) error {
 		return nil
 	}
 
-	schemas, err := converter.ToSchemas(h.crd, h.client)
+	schemas, err := converter.ToSchemas(h.client)
 	if err != nil {
 		return err
 	}

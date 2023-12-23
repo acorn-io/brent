@@ -64,17 +64,15 @@ type RelationshipNotifier interface {
 
 type Store struct {
 	clientGetter ClientGetter
-	notifier     RelationshipNotifier
 }
 
-func NewProxyStore(clientGetter ClientGetter, notifier RelationshipNotifier, lookup accesscontrol.AccessSetLookup) types2.Store {
+func NewProxyStore(clientGetter ClientGetter, lookup accesscontrol.AccessSetLookup) types2.Store {
 	return &errorStore{
 		Store: &WatchRefresh{
 			Store: &partition.Store{
 				Partitioner: &rbacPartitioner{
 					proxyStore: &Store{
 						clientGetter: clientGetter,
-						notifier:     notifier,
 					},
 				},
 			},
@@ -321,21 +319,6 @@ func (s *Store) listAndWatch(apiOp *types2.APIRequest, k8sClient dynamic.Resourc
 		<-ctx.Done()
 		watcher.Stop()
 	}()
-
-	if s.notifier != nil {
-		eg.Go(func() error {
-			for rel := range s.notifier.OnInboundRelationshipChange(ctx, schema, apiOp.Namespace) {
-				obj, err := s.byID(apiOp, schema, rel.Namespace, rel.Name)
-				if err == nil {
-					result <- s.toAPIEvent(apiOp, schema, watch.Modified, obj)
-				} else {
-					logrus.Debugf("notifier watch error: %v", err)
-					returnErr(errors.Wrapf(err, "notifier watch error: %v", err), result)
-				}
-			}
-			return fmt.Errorf("closed")
-		})
-	}
 
 	eg.Go(func() error {
 		for event := range watcher.ResultChan() {

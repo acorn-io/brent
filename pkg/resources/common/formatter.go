@@ -1,16 +1,15 @@
 package common
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/attributes"
 	"github.com/acorn-io/brent/pkg/schema"
 	"github.com/acorn-io/brent/pkg/stores/proxy"
-	"github.com/acorn-io/brent/pkg/summarycache"
 	"github.com/acorn-io/brent/pkg/types"
 	"github.com/acorn-io/schemer/data"
-	"github.com/rancher/wrangler/pkg/slice"
 	"github.com/rancher/wrangler/pkg/summary"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,11 +18,10 @@ import (
 )
 
 func DefaultTemplate(clientGetter proxy.ClientGetter,
-	summaryCache *summarycache.SummaryCache,
 	asl accesscontrol.AccessSetLookup) schema.Template {
 	return schema.Template{
-		Store:     proxy.NewProxyStore(clientGetter, summaryCache, asl),
-		Formatter: formatter(summaryCache),
+		Store:     proxy.NewProxyStore(clientGetter, asl),
+		Formatter: formatter,
 	}
 }
 
@@ -49,56 +47,46 @@ func selfLink(gvr schema2.GroupVersionResource, meta metav1.Object) (prefix stri
 	return buf.String()
 }
 
-func formatter(summarycache *summarycache.SummaryCache) types.Formatter {
-	return func(request *types.APIRequest, resource *types.RawResource) {
-		if resource.Schema == nil {
-			return
-		}
-
-		gvr := attributes.GVR(resource.Schema)
-		if gvr.Version == "" {
-			return
-		}
-
-		meta, err := meta.Accessor(resource.APIObject.Object)
-		if err != nil {
-			return
-		}
-		selfLink := selfLink(gvr, meta)
-
-		u := request.URLBuilder.RelativeToRoot(selfLink)
-		resource.Links["view"] = u
-
-		if _, ok := resource.Links["update"]; !ok && slice.ContainsString(resource.Schema.CollectionMethods, "PUT") {
-			resource.Links["update"] = u
-		}
-
-		if _, ok := resource.Links["update"]; !ok && slice.ContainsString(resource.Schema.ResourceMethods, "blocked-PUT") {
-			resource.Links["update"] = "blocked"
-		}
-
-		if _, ok := resource.Links["remove"]; !ok && slice.ContainsString(resource.Schema.ResourceMethods, "blocked-DELETE") {
-			resource.Links["remove"] = "blocked"
-		}
-
-		if unstr, ok := resource.APIObject.Object.(*unstructured.Unstructured); ok {
-			s, rel := summarycache.SummaryAndRelationship(unstr)
-			data.PutValue(unstr.Object, map[string]interface{}{
-				"name":          s.State,
-				"error":         s.Error,
-				"transitioning": s.Transitioning,
-				"message":       strings.Join(s.Message, ":"),
-			}, "metadata", "state")
-			data.PutValue(unstr.Object, rel, "metadata", "relationships")
-
-			summary.NormalizeConditions(unstr)
-
-			includeFields(request, unstr)
-			excludeFields(request, unstr)
-			excludeValues(request, unstr)
-		}
-
+func formatter(request *types.APIRequest, resource *types.RawResource) {
+	if resource.Schema == nil {
+		return
 	}
+
+	gvr := attributes.GVR(resource.Schema)
+	if gvr.Version == "" {
+		return
+	}
+
+	meta, err := meta.Accessor(resource.APIObject.Object)
+	if err != nil {
+		return
+	}
+	selfLink := selfLink(gvr, meta)
+
+	u := request.URLBuilder.RelativeToRoot(selfLink)
+	resource.Links["view"] = u
+
+	if _, ok := resource.Links["update"]; !ok && slices.Contains(resource.Schema.CollectionMethods, "PUT") {
+		resource.Links["update"] = u
+	}
+
+	if _, ok := resource.Links["update"]; !ok && slices.Contains(resource.Schema.ResourceMethods, "blocked-PUT") {
+		resource.Links["update"] = "blocked"
+	}
+
+	if _, ok := resource.Links["remove"]; !ok && slices.Contains(resource.Schema.ResourceMethods, "blocked-DELETE") {
+		resource.Links["remove"] = "blocked"
+	}
+
+	if unstr, ok := resource.APIObject.Object.(*unstructured.Unstructured); ok {
+		summary.NormalizeConditions(unstr)
+
+		includeFields(request, unstr)
+		excludeManagedFields(request, unstr)
+		excludeFields(request, unstr)
+		excludeValues(request, unstr)
+	}
+
 }
 
 func includeFields(request *types.APIRequest, unstr *unstructured.Unstructured) {
@@ -112,6 +100,10 @@ func includeFields(request *types.APIRequest, unstr *unstructured.Unstructured) 
 		}
 		unstr.Object = newObj
 	}
+}
+
+func excludeManagedFields(request *types.APIRequest, unstr *unstructured.Unstructured) {
+	data.RemoveValue(unstr.Object, "metadata", "managedFields")
 }
 
 func excludeFields(request *types.APIRequest, unstr *unstructured.Unstructured) {

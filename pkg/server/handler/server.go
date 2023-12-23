@@ -30,7 +30,7 @@ type Server struct {
 	URLParser       parse2.URLParser
 }
 
-func DefaultAPIServer() *Server {
+func defaultAPIServer() *Server {
 	s := &Server{
 		Schemas: types2.EmptyAPISchemas().MustAddSchemas(builtin.Schemas),
 		ResponseWriters: map[string]types2.ResponseWriter{

@@ -6,9 +6,9 @@ import (
 	"github.com/acorn-io/brent/pkg/debug"
 	brentcli "github.com/acorn-io/brent/pkg/server/cli"
 	"github.com/acorn-io/brent/pkg/version"
-	"github.com/rancher/wrangler/pkg/signals"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"k8s.io/apiserver/pkg/server"
 )
 
 var (
@@ -32,7 +32,7 @@ func main() {
 }
 
 func run(_ *cli.Context) error {
-	ctx := signals.SetupSignalContext()
+	ctx := server.SetupSignalContext()
 	debugconfig.MustSetupDebug()
 	s, err := config.ToServer(ctx)
 	if err != nil {

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/acorn-io/brent/pkg/types"
-	"github.com/rancher/wrangler/pkg/generated/controllers/apiextensions.k8s.io/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 )
@@ -38,7 +37,7 @@ func GVRToPluralName(gvr schema.GroupVersionResource) string {
 	return fmt.Sprintf("%s.%s", gvr.Group, gvr.Resource)
 }
 
-func ToSchemas(crd v1.CustomResourceDefinitionClient, client discovery.DiscoveryInterface) (map[string]*types.APISchema, error) {
+func ToSchemas(client discovery.DiscoveryInterface) (map[string]*types.APISchema, error) {
 	result := map[string]*types.APISchema{}
 
 	if err := AddOpenAPI(client, result); err != nil {
@@ -46,10 +45,6 @@ func ToSchemas(crd v1.CustomResourceDefinitionClient, client discovery.Discovery
 	}
 
 	if err := AddDiscovery(client, result); err != nil {
-		return nil, err
-	}
-
-	if err := AddCustomResources(crd, result); err != nil {
 		return nil, err
 	}
 

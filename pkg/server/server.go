@@ -16,7 +16,6 @@ import (
 	"github.com/acorn-io/brent/pkg/schema"
 	"github.com/acorn-io/brent/pkg/server/handler"
 	"github.com/acorn-io/brent/pkg/server/router"
-	"github.com/acorn-io/brent/pkg/summarycache"
 	"github.com/acorn-io/brent/pkg/types"
 	"github.com/rancher/dynamiclistener/server"
 	"k8s.io/client-go/rest"
@@ -130,10 +129,7 @@ func setup(ctx context.Context, server *Server) error {
 		return err
 	}
 
-	summaryCache := summarycache.New(sf, ccache)
-	summaryCache.Start(ctx)
-
-	for _, template := range resources.DefaultSchemaTemplates(cf, summaryCache, asl, server.controllers.K8s.Discovery()) {
+	for _, template := range resources.DefaultSchemaTemplates(cf, asl, server.controllers.K8s.Discovery()) {
 		sf.AddTemplate(template)
 	}
 
@@ -147,7 +143,6 @@ func setup(ctx context.Context, server *Server) error {
 	schemacontroller.Register(ctx,
 		cols,
 		server.controllers.K8s.Discovery(),
-		server.controllers.CRD.CustomResourceDefinition(),
 		server.controllers.API.APIService(),
 		server.controllers.K8s.AuthorizationV1().SelfSubjectAccessReviews(),
 		ccache,

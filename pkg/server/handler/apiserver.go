@@ -24,7 +24,7 @@ func New(cfg *rest.Config, sf schema.Factory, authMiddleware auth.Middleware, ne
 
 	a := &apiServer{
 		sf:     sf,
-		server: DefaultAPIServer(),
+		server: defaultAPIServer(),
 	}
 	a.server.AccessControl = accesscontrol.NewAccessControl()
 
