@@ -7,7 +7,7 @@ import (
 
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/store/empty"
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/rancher/wrangler/pkg/schemas"
+	"github.com/acorn-io/brent/pkg/schemas"
 )
 
 func Register(apiSchemas *types.APISchemas, versions []string, roots ...string) {

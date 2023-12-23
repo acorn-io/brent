@@ -2,11 +2,11 @@ package builtin
 
 import (
 	"net/http"
+	"slices"
 
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/store/schema"
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/rancher/wrangler/pkg/schemas"
-	"github.com/rancher/wrangler/pkg/slice"
+	"github.com/acorn-io/brent/pkg/schemas"
 )
 
 var (
@@ -81,7 +81,7 @@ func SchemaFormatter(apiOp *types.APIRequest, resource *types.RawResource) {
 }
 
 func getSchemaCollectionLink(apiOp *types.APIRequest, schema *types.APISchema) string {
-	if schema != nil && (slice.ContainsString(schema.CollectionMethods, http.MethodGet) || slice.ContainsString(schema.CollectionMethods, http.MethodPost)) {
+	if schema != nil && (slices.Contains(schema.CollectionMethods, http.MethodGet) || slices.Contains(schema.CollectionMethods, http.MethodPost)) {
 		return apiOp.URLBuilder.Collection(schema)
 	}
 	return ""

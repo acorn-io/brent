@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/acorn-io/brent/pkg/schemas/validation"
 	"github.com/acorn-io/brent/pkg/stores/proxy"
 	"github.com/rancher/wrangler/pkg/condition"
 	"github.com/rancher/wrangler/pkg/randomtoken"
-	"github.com/rancher/wrangler/pkg/schemas/validation"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"

@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
+	"github.com/acorn-io/brent/pkg/schemas/validation"
 	"github.com/gorilla/websocket"
-	"github.com/rancher/wrangler/pkg/schemas/validation"
 	"github.com/sirupsen/logrus"
 )
 

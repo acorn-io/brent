@@ -5,12 +5,12 @@ import (
 
 	"github.com/acorn-io/brent/pkg/accesscontrol"
 	"github.com/acorn-io/brent/pkg/attributes"
+	"github.com/acorn-io/brent/pkg/data"
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
 	"github.com/acorn-io/brent/pkg/schema"
 	metricsStore "github.com/acorn-io/brent/pkg/stores/metrics"
 	"github.com/acorn-io/brent/pkg/stores/proxy"
 	"github.com/acorn-io/brent/pkg/summarycache"
-	"github.com/rancher/wrangler/pkg/data"
 	"github.com/rancher/wrangler/pkg/slice"
 	"github.com/rancher/wrangler/pkg/summary"
 	"k8s.io/apimachinery/pkg/api/meta"

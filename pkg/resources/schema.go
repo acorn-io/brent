@@ -13,7 +13,6 @@ import (
 	"github.com/acorn-io/brent/pkg/resources/cluster"
 	"github.com/acorn-io/brent/pkg/resources/common"
 	"github.com/acorn-io/brent/pkg/resources/counts"
-	"github.com/acorn-io/brent/pkg/resources/formatters"
 	"github.com/acorn-io/brent/pkg/resources/userpreferences"
 	"github.com/acorn-io/brent/pkg/schema"
 	brentschema "github.com/acorn-io/brent/pkg/schema"
@@ -50,18 +49,6 @@ func DefaultSchemaTemplates(cf *client.Factory,
 	return []schema.Template{
 		common.DefaultTemplate(cf, summaryCache, lookup),
 		apigroups.Template(discovery),
-		{
-			ID:        "configmap",
-			Formatter: formatters.DropHelmData,
-		},
-		{
-			ID:        "secret",
-			Formatter: formatters.DropHelmData,
-		},
-		{
-			ID:        "pod",
-			Formatter: formatters.Pod,
-		},
 		{
 			ID: "management.cattle.io.cluster",
 			Customize: func(apiSchema *types.APISchema) {

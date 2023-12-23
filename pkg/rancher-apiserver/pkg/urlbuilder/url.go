@@ -6,8 +6,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/acorn-io/brent/pkg/name"
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/rancher/wrangler/pkg/name"
 )
 
 const (

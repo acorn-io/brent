@@ -3,47 +3,46 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/apierror"
-
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/rancher/wrangler/pkg/schemas/validation"
-	"github.com/rancher/wrangler/pkg/slice"
+	"github.com/acorn-io/brent/pkg/schemas/validation"
 )
 
 type SchemaBasedAccess struct {
 }
 
 func (*SchemaBasedAccess) CanCreate(apiOp *types.APIRequest, schema *types.APISchema) error {
-	if slice.ContainsString(schema.CollectionMethods, http.MethodPost) {
+	if slices.Contains(schema.CollectionMethods, http.MethodPost) {
 		return nil
 	}
 	return apierror.NewAPIError(validation.PermissionDenied, "can not create "+schema.ID)
 }
 
 func (*SchemaBasedAccess) CanGet(apiOp *types.APIRequest, schema *types.APISchema) error {
-	if slice.ContainsString(schema.ResourceMethods, http.MethodGet) {
+	if slices.Contains(schema.ResourceMethods, http.MethodGet) {
 		return nil
 	}
 	return apierror.NewAPIError(validation.PermissionDenied, "can not get "+schema.ID)
 }
 
 func (*SchemaBasedAccess) CanList(apiOp *types.APIRequest, schema *types.APISchema) error {
-	if slice.ContainsString(schema.CollectionMethods, http.MethodGet) || slice.ContainsString(schema.CollectionMethods, http.MethodPost) {
+	if slices.Contains(schema.CollectionMethods, http.MethodGet) || slices.Contains(schema.CollectionMethods, http.MethodPost) {
 		return nil
 	}
 	return apierror.NewAPIError(validation.PermissionDenied, "can not list "+schema.ID)
 }
 
 func (*SchemaBasedAccess) CanUpdate(apiOp *types.APIRequest, obj types.APIObject, schema *types.APISchema) error {
-	if slice.ContainsString(schema.ResourceMethods, http.MethodPut) {
+	if slices.Contains(schema.ResourceMethods, http.MethodPut) {
 		return nil
 	}
 	return apierror.NewAPIError(validation.PermissionDenied, "can not update "+schema.ID)
 }
 
 func (*SchemaBasedAccess) CanDelete(apiOp *types.APIRequest, obj types.APIObject, schema *types.APISchema) error {
-	if slice.ContainsString(schema.ResourceMethods, http.MethodDelete) {
+	if slices.Contains(schema.ResourceMethods, http.MethodDelete) {
 		return nil
 	}
 	return apierror.NewAPIError(validation.PermissionDenied, "can not delete "+schema.ID)

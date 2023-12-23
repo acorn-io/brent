@@ -2,7 +2,7 @@ package empty
 
 import (
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/rancher/wrangler/pkg/schemas/validation"
+	"github.com/acorn-io/brent/pkg/schemas/validation"
 )
 
 type Store struct {

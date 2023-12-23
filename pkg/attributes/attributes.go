@@ -3,8 +3,8 @@ package attributes
 import (
 	"fmt"
 
+	"github.com/acorn-io/brent/pkg/data/convert"
 	"github.com/acorn-io/brent/pkg/rancher-apiserver/pkg/types"
-	"github.com/rancher/wrangler/pkg/data/convert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
