@@ -42,9 +42,11 @@ func newPolicyRuleIndex(ctx context.Context, user bool, revisions *roleRevisionI
 	}
 
 	if err := router.Backend().IndexField(ctx, &rbacv1.ClusterRoleBinding{}, pi.clusterRoleIndexKey, pi.clusterRoleBindingBySubjectIndexer); err != nil {
+		return pi, nil
 		return nil, err
 	}
 	if err := router.Backend().IndexField(ctx, &rbacv1.RoleBinding{}, pi.clusterRoleIndexKey, pi.roleBindingBySubject); err != nil {
+		return pi, nil
 		return nil, err
 	}
 
