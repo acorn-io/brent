@@ -1,78 +1,63 @@
 package cli
 
 import (
-	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/acorn-io/baaah/pkg/ratelimit"
 	"github.com/acorn-io/baaah/pkg/restconfig"
 	brentauth "github.com/acorn-io/brent/pkg/auth"
 	authcli "github.com/acorn-io/brent/pkg/auth/cli"
 	"github.com/acorn-io/brent/pkg/server"
-	"github.com/urfave/cli"
+	"github.com/acorn-io/cmd"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
-type Config struct {
-	KubeConfig     string
-	Context        string
-	HTTPListenPort int
-	UIPath         string
+type Brent struct {
+	cmd.DebugLogging
 
-	WebhookConfig authcli.WebhookConfig
+	Kubeconfig     string `env:"KUBECONFIG"`
+	Context        string `env:"CONTEXT"`
+	HttpListenPort int    `default:"9080"`
+
+	authcli.WebhookConfig
 }
 
-func (c *Config) MustServer(ctx context.Context) *server.Server {
-	cc, err := c.ToServer(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return cc
+func NewBrent() *cobra.Command {
+	return cmd.Command(&Brent{}, cobra.Command{})
 }
 
-func (c *Config) ToServer(ctx context.Context) (*server.Server, error) {
+func (c *Brent) Run(cmd *cobra.Command, args []string) error {
 	var (
 		auth brentauth.Middleware
 	)
 
-	restConfig, err := restconfig.FromFile(c.KubeConfig, c.Context)
+	if err := c.DebugLogging.InitLogging(); err != nil {
+		return err
+	}
+
+	restConfig, err := restconfig.FromFile(c.Kubeconfig, c.Context)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	restConfig.RateLimiter = ratelimit.None
 
 	if c.WebhookConfig.WebhookAuthentication {
 		auth, err = c.WebhookConfig.WebhookMiddleware()
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return server.New(ctx, restConfig, &server.Options{
+	s, err := server.New(cmd.Context(), restConfig, &server.Options{
 		AuthMiddleware: auth,
 	})
-}
-
-func Flags(config *Config) []cli.Flag {
-	flags := []cli.Flag{
-		cli.StringFlag{
-			Name:        "kubeconfig",
-			EnvVar:      "KUBECONFIG",
-			Destination: &config.KubeConfig,
-		},
-		cli.StringFlag{
-			Name:        "context",
-			EnvVar:      "CONTEXT",
-			Destination: &config.Context,
-		},
-		cli.StringFlag{
-			Name:        "ui-path",
-			Destination: &config.UIPath,
-		},
-		cli.IntFlag{
-			Name:        "http-listen-port",
-			Value:       9080,
-			Destination: &config.HTTPListenPort,
-		},
+	if err != nil {
+		return err
 	}
 
-	return append(flags, authcli.Flags(&config.WebhookConfig)...)
+	addr := fmt.Sprintf(":%d", c.HttpListenPort)
+	logrus.Info("Listening on " + addr)
+	return http.ListenAndServe(addr, s)
 }

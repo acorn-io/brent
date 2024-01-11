@@ -5,6 +5,7 @@ import (
 
 	"github.com/acorn-io/baaah"
 	"github.com/acorn-io/baaah/pkg/router"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -32,6 +33,9 @@ func NewController(cfg *rest.Config) (*Controllers, error) {
 		return nil, err
 	}
 	if err := apiv1.AddToScheme(s); err != nil {
+		return nil, err
+	}
+	if err := rbacv1.AddToScheme(s); err != nil {
 		return nil, err
 	}
 

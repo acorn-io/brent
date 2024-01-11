@@ -1,12 +1,13 @@
 package version
 
-import "fmt"
-
-var (
-	Version   = "dev"
-	GitCommit = "HEAD"
+import (
+	"github.com/acorn-io/baaah/pkg/version"
 )
 
-func FriendlyVersion() string {
-	return fmt.Sprintf("%s (%s)", Version, GitCommit)
+var (
+	Tag = "v0.0.0-dev"
+)
+
+func Get() version.Version {
+	return version.NewVersion(Tag)
 }

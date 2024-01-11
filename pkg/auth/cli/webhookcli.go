@@ -6,15 +6,14 @@ import (
 
 	"github.com/acorn-io/baaah/pkg/ratelimit"
 	"github.com/acorn-io/brent/pkg/auth"
-	"github.com/urfave/cli"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 type WebhookConfig struct {
-	WebhookAuthentication bool
-	WebhookKubeconfig     string
-	WebhookURL            string
-	CacheTTLSeconds       int
+	WebhookAuthentication  bool
+	WebhookKubeconfig      string
+	WebhookURL             string
+	WebhookCacheTTLSeconds int
 }
 
 func (w *WebhookConfig) MustWebhookMiddleware() auth.Middleware {
@@ -46,30 +45,5 @@ func (w *WebhookConfig) WebhookMiddleware() (auth.Middleware, error) {
 	}
 
 	kubeConfig.RateLimiter = ratelimit.None
-	return auth.NewWebhookMiddleware(time.Duration(w.CacheTTLSeconds)*time.Second, kubeConfig)
-}
-
-func Flags(config *WebhookConfig) []cli.Flag {
-	return []cli.Flag{
-		cli.BoolFlag{
-			Name:        "webhook-auth",
-			EnvVar:      "WEBHOOK_AUTH",
-			Destination: &config.WebhookAuthentication,
-		},
-		cli.StringFlag{
-			Name:        "webhook-kubeconfig",
-			EnvVar:      "WEBHOOK_KUBECONFIG",
-			Destination: &config.WebhookKubeconfig,
-		},
-		cli.StringFlag{
-			Name:        "webhook-url",
-			EnvVar:      "WEBHOOK_URL",
-			Destination: &config.WebhookURL,
-		},
-		cli.IntFlag{
-			Name:        "webhook-cache-ttl",
-			EnvVar:      "WEBHOOK_CACHE_TTL",
-			Destination: &config.CacheTTLSeconds,
-		},
-	}
+	return auth.NewWebhookMiddleware(time.Duration(w.WebhookCacheTTLSeconds)*time.Second, kubeConfig)
 }

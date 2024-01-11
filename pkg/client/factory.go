@@ -40,6 +40,10 @@ func (a *addQuery) RoundTrip(req *http.Request) (*http.Response, error) {
 	return a.next.RoundTrip(req)
 }
 
+func (a *addQuery) WrappedRoundTripper() http.RoundTripper {
+	return a.next
+}
+
 func NewFactory(cfg *rest.Config, impersonate bool) (*Factory, error) {
 	clientCfg := rest.CopyConfig(cfg)
 	clientCfg.QPS = 10000
