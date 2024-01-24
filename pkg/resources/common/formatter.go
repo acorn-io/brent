@@ -8,6 +8,7 @@ import (
 	"github.com/acorn-io/brent/pkg/attributes"
 	"github.com/acorn-io/brent/pkg/schema"
 	"github.com/acorn-io/brent/pkg/stores/proxy"
+	"github.com/acorn-io/brent/pkg/summary"
 	"github.com/acorn-io/brent/pkg/types"
 	"github.com/acorn-io/schemer/data"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -78,11 +79,22 @@ func formatter(request *types.APIRequest, resource *types.RawResource) {
 	}
 
 	if unstr, ok := resource.APIObject.Object.(*unstructured.Unstructured); ok {
+		s := summary.Summarized(unstr)
+		data.PutValue(unstr.Object, map[string]interface{}{
+			"name":          s.State,
+			"error":         s.Error,
+			"transitioning": s.Transitioning,
+			"message":       strings.Join(s.Message, ":"),
+		}, "metadata", "state")
+
+		summary.NormalizeConditions(unstr)
+
 		includeFields(request, unstr)
 		excludeManagedFields(request, unstr)
 		excludeFields(request, unstr)
 		excludeValues(request, unstr)
 	}
+
 
 }
 
